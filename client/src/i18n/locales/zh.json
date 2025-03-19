@@ -1,0 +1,27 @@
+{
+  "app": {
+    "title": "Pickatale 学习助手",
+    "language": "语言"
+  },
+  "chat": {
+    "placeholder": "在此输入您的消息...",
+    "send": "发送",
+    "record": "按住录音",
+    "recording": "录音中...",
+    "ai": "AI助手",
+    "you": "你",
+    "thinking": "思考中...",
+    "speechToText": "将语音转换为文本...",
+    "textToSpeech": "生成语音回复中..."
+  },
+  "errors": {
+    "recordingFailed": "录音失败，请检查您的麦克风。",
+    "apiError": "与服务器通信时出错，请重试。",
+    "emptyMessage": "请输入消息或录制语音。",
+    "audioPlaybackError": "音频播放失败，请重试。"
+  },
+  "messages": {
+    "welcome": "您好！我是您的语音助手。今天我能帮您做什么？",
+    "pressSpace": "您可以按空格键开始录音。"
+  }
+}

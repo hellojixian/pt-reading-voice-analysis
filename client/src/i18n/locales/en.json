@@ -1,0 +1,27 @@
+{
+  "app": {
+    "title": "Pickatale Learning Assistant",
+    "language": "Language"
+  },
+  "chat": {
+    "placeholder": "Type your message here...",
+    "send": "Send",
+    "record": "Hold to Record",
+    "recording": "Recording...",
+    "ai": "AI Assistant",
+    "you": "You",
+    "thinking": "Thinking...",
+    "speechToText": "Converting speech to text...",
+    "textToSpeech": "Generating voice response..."
+  },
+  "errors": {
+    "recordingFailed": "Recording failed. Please check your microphone.",
+    "apiError": "Error communicating with server. Please try again.",
+    "emptyMessage": "Please enter a message or record your voice.",
+    "audioPlaybackError": "Audio playback failed. Please try again."
+  },
+  "messages": {
+    "welcome": "Hello! I'm your voice assistant. How can I help you today?",
+    "pressSpace": "You can press the SPACE key to start recording."
+  }
+}
