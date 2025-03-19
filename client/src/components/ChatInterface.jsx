@@ -17,6 +17,7 @@ const ChatInterface = () => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [status, setStatus] = useState('');
   const [playingAudioId, setPlayingAudioId] = useState(null); // 跟踪当前播放的音频ID
+  const [inputHasFocus, setInputHasFocus] = useState(false); // 跟踪输入框是否有焦点
   const chatContainerRef = useRef(null);
   const audioRef = useRef(new Audio());
 
@@ -327,6 +328,8 @@ const ChatInterface = () => {
           placeholder={t('chat.placeholder')}
           className="text-input"
           disabled={isProcessing}
+          onFocus={() => setInputHasFocus(true)}
+          onBlur={() => setInputHasFocus(false)}
         />
         <button
           type="submit"
@@ -340,6 +343,7 @@ const ChatInterface = () => {
           isProcessing={isProcessing}
           stopAudio={stopAudio}
           playingAudioId={playingAudioId}
+          inputHasFocus={inputHasFocus}
         />
       </form>
 

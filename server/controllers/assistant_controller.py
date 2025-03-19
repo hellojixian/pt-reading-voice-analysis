@@ -65,13 +65,17 @@ def assistant_chat():
         client.beta.threads.messages.create(
             thread_id=thread_id,
             role="user",
-            content=user_message
+            content=user_message + """\n
+            VERY IMPORTANT: ALWAYS call the function with your response if you used file_search.
+            """
         )
 
         # 运行助手
         run = client.beta.threads.runs.create(
             thread_id=thread_id,
-            assistant_id=assistant_id
+            assistant_id=assistant_id,
+            tools=[{"type": "file_search"}, {"type": "code_interpreter"}],
+            # tool_choice={"type": "file_search"},
         )
 
         # 初始化函数调用结果

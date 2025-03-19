@@ -9,8 +9,9 @@ import { useTranslation } from 'react-i18next';
  * @param {boolean} props.isProcessing - 是否正在处理请求
  * @param {Function} props.stopAudio - 停止正在播放的音频
  * @param {string|null} props.playingAudioId - 正在播放的音频ID，如果没有则为null
+ * @param {boolean} props.inputHasFocus - 文本输入框是否有焦点
  */
-const RecordButton = ({ onAudioRecorded, isProcessing, stopAudio, playingAudioId }) => {
+const RecordButton = ({ onAudioRecorded, isProcessing, stopAudio, playingAudioId, inputHasFocus }) => {
   const { t } = useTranslation();
   const [isRecording, setIsRecording] = useState(false);
   const [recorder, setRecorder] = useState(null);
@@ -57,6 +58,11 @@ const RecordButton = ({ onAudioRecorded, isProcessing, stopAudio, playingAudioId
   // 监听空格键
   useEffect(() => {
     const handleKeyDown = (e) => {
+      // 只有在文本输入框没有焦点时才应用空格键快捷方式
+      if (inputHasFocus) {
+        return; // 如果输入框有焦点，不处理空格键事件
+      }
+
       // 只有空格键被按下且未处于处理状态时才开始录音
       if (e.code === 'Space' && !isProcessing && !isRecording && recorder) {
         // 防止空格键滚动页面
@@ -84,7 +90,7 @@ const RecordButton = ({ onAudioRecorded, isProcessing, stopAudio, playingAudioId
       window.removeEventListener('keydown', handleKeyDown);
       window.removeEventListener('keyup', handleKeyUp);
     };
-  }, [isRecording, recorder, isProcessing]);
+  }, [isRecording, recorder, isProcessing, playingAudioId, stopAudio, inputHasFocus]);
 
   const startRecording = () => {
     if (recorder && recorder.state !== 'recording' && !isProcessing) {
