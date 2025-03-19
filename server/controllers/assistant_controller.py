@@ -5,6 +5,7 @@ OpenAI Assistant 控制器
 import os
 import tempfile
 import time
+import json
 from flask import jsonify, request, current_app
 
 # 导入 OpenAI Assistant 相关库
@@ -73,6 +74,9 @@ def assistant_chat():
             assistant_id=assistant_id
         )
 
+        # 初始化函数调用结果
+        function_results = []
+
         # 等待运行完成
         while True:
             run_status = client.beta.threads.runs.retrieve(
@@ -80,10 +84,44 @@ def assistant_chat():
                 run_id=run.id
             )
             print(f"Assistant 运行状态: {run_status.status}")
+
             if run_status.status == 'completed':
                 break
+            elif run_status.status == 'requires_action':
+                print("Assistant 需要执行函数")
+                # 处理函数调用请求
+                if run_status.required_action.type == "submit_tool_outputs":
+                    tool_calls = run_status.required_action.submit_tool_outputs.tool_calls
+                    tool_outputs = []
+
+                    for tool_call in tool_calls:
+                        function_name = tool_call.function.name
+                        function_args = json.loads(tool_call.function.arguments)
+                        print(f"函数名称: {function_name}")
+                        print(f"函数参数: {function_args}")
+
+                        # 记录函数调用
+                        function_results.append({
+                            "name": function_name,
+                            "arguments": function_args
+                        })
+
+                        # 如果是推荐图书函数，直接返回参数
+                        if function_name == "recommend_books":
+                            tool_outputs.append({
+                                "tool_call_id": tool_call.id,
+                                "output": json.dumps(function_args)
+                            })
+
+                    # 提交函数执行结果给 OpenAI
+                    client.beta.threads.runs.submit_tool_outputs(
+                        thread_id=thread_id,
+                        run_id=run.id,
+                        tool_outputs=tool_outputs
+                    )
             elif run_status.status in ['failed', 'cancelled', 'expired']:
                 return jsonify({"error": f"Assistant 运行失败: {run_status.status}"}), 500
+
             # 短暂等待后再检查状态
             time.sleep(0.5)
 
@@ -118,7 +156,8 @@ def assistant_chat():
         # 构建响应
         response = {
             "text": ai_response,
-            "audio_url": f"/api/audio/{os.path.basename(audio_path)}"
+            "audio_url": f"/api/audio/{os.path.basename(audio_path)}",
+            "function_results": function_results  # 添加函数调用结果
         }
 
         # 保存文件路径以便后续请求

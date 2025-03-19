@@ -150,6 +150,51 @@ body {
   height: 100%;
 }
 
+/* 函数调用结果样式 */
+.function-results {
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border-color);
+}
+
+.book-recommendations {
+  background-color: rgba(76, 132, 255, 0.05);
+  border-radius: 8px;
+  padding: 10px;
+  margin-bottom: 8px;
+}
+
+.recommendation-summary {
+  font-weight: 500;
+  color: var(--primary-color);
+  margin-bottom: 10px;
+  font-size: 0.95rem;
+}
+
+.recommended-books-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.recommended-book {
+  padding: 8px;
+  border-left: 3px solid var(--primary-color);
+  background-color: rgba(76, 132, 255, 0.03);
+  border-radius: 0 4px 4px 0;
+}
+
+.book-title {
+  font-weight: 500;
+  margin-bottom: 4px;
+}
+
+.book-reason {
+  font-size: 0.9rem;
+  color: var(--text-color);
+  opacity: 0.8;
+}
+
 .input-container {
   display: flex;
   gap: 10px;

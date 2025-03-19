@@ -16,6 +16,7 @@ import prompt_templates as pt
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 OPENAI_MODEL = os.getenv("OPENAI_MODEL")
 
+
 # 初始化 OpenAI 客户端
 client = openai.OpenAI(api_key=OPENAI_API_KEY)
 

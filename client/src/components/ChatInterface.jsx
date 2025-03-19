@@ -224,7 +224,8 @@ const ChatInterface = () => {
         text: response.text,
         sender: 'assistant',
         timestamp: new Date().toISOString(),
-        audioUrl: response.audio_url
+        audioUrl: response.audio_url,
+        functionResults: response.function_results || [] // 添加函数调用结果
       }]);
 
       // 自动播放音频回复
@@ -264,6 +265,32 @@ const ChatInterface = () => {
               {message.sender === 'user' ? t('chat.you') : t('chat.ai')}
             </div>
             <div className="message-content">{message.text}</div>
+
+            {/* 显示函数调用结果，例如推荐的书籍 */}
+            {message.functionResults && message.functionResults.length > 0 && (
+              <div className="function-results">
+                {message.functionResults.map((func, index) => {
+                  if (func.name === 'recommend_books') {
+                    const { recommendation_summary, recommended_books } = func.arguments;
+                    return (
+                      <div key={index} className="book-recommendations">
+                        <div className="recommendation-summary">{recommendation_summary}</div>
+                        <div className="recommended-books-list">
+                          {recommended_books.map((book, bookIndex) => (
+                            <div key={bookIndex} className="recommended-book">
+                              <div className="book-title">📚 {book.book_title} (ID: {book.book_id})</div>
+                              <div className="book-reason">推荐理由: {book.reason}</div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  }
+                  return null;
+                })}
+              </div>
+            )}
+
             <div className="message-time">{formatTimestamp(message.timestamp)}</div>
             {message.audioUrl && (
               <div className="message-audio-controls">
