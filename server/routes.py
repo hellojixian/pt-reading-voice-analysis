@@ -9,6 +9,7 @@ from controllers.chat_controller import chat
 from controllers.speech_controller import speech_to_text
 from controllers.tts_controller import text_to_speech
 from controllers.audio_controller import get_audio
+from controllers.assistant_controller import assistant_chat
 
 # 创建蓝图
 api = Blueprint('api', __name__)
@@ -29,8 +30,14 @@ def api_health_check():
 # 聊天路由
 @api.route('/api/chat', methods=['POST'])
 def api_chat():
-    """处理文字聊天请求"""
+    """处理文字聊天请求（传统 Chat API）"""
     return chat()
+
+# Assistant 聊天路由
+@api.route('/api/assistant-chat', methods=['POST'])
+def api_assistant_chat():
+    """处理文字聊天请求（Assistant API）"""
+    return assistant_chat()
 
 # 语音转文字路由
 @api.route('/api/speech-to-text', methods=['POST'])

@@ -16,6 +16,7 @@ const ChatInterface = () => {
   const [inputText, setInputText] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
   const [status, setStatus] = useState('');
+  const [playingAudioId, setPlayingAudioId] = useState(null); // 跟踪当前播放的音频ID
   const chatContainerRef = useRef(null);
   const audioRef = useRef(new Audio());
 
@@ -47,15 +48,76 @@ const ChatInterface = () => {
       console.error('音频播放错误:', e);
       setStatus(t('errors.audioPlaybackError'));
       setTimeout(() => setStatus(''), 3000);
+      setPlayingAudioId(null); // 重置播放状态
+    };
+
+    // 添加音频结束处理
+    const handleAudioEnded = () => {
+      setPlayingAudioId(null); // 重置播放状态
+    };
+
+    // 添加ESC键监听，用于停止正在播放的音频
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape' && playingAudioId) {
+        stopAudio();
+      }
     };
 
     audio.addEventListener('error', handleAudioError);
+    audio.addEventListener('ended', handleAudioEnded);
+    window.addEventListener('keydown', handleKeyDown);
 
     // 清理函数
     return () => {
       audio.removeEventListener('error', handleAudioError);
+      audio.removeEventListener('ended', handleAudioEnded);
+      window.removeEventListener('keydown', handleKeyDown);
     };
-  }, [t]);
+  }, [t, playingAudioId]);
+
+  // 停止音频播放
+  const stopAudio = () => {
+    const audio = audioRef.current;
+    if (audio) {
+      audio.pause();
+      audio.currentTime = 0;
+    }
+    setPlayingAudioId(null);
+  };
+
+  // 播放音频
+  const playAudio = (messageId, audioUrl) => {
+    // 如果已经在播放，先停止
+    if (playingAudioId) {
+      stopAudio();
+    }
+
+    try {
+      // 确保URL是绝对路径
+      const fullAudioUrl = audioUrl.startsWith('http')
+        ? audioUrl
+        : `${API_BASE_URL.replace('/api', '')}${audioUrl}`;
+
+      audioRef.current.src = fullAudioUrl;
+      audioRef.current.load();
+
+      // 播放音频，并处理可能的播放失败
+      const playPromise = audioRef.current.play();
+
+      if (playPromise !== undefined) {
+        playPromise.then(() => {
+          // 设置当前播放的消息ID
+          setPlayingAudioId(messageId);
+        }).catch(e => {
+          console.error('音频播放失败:', e);
+          setStatus(t('errors.audioPlaybackError'));
+          setTimeout(() => setStatus(''), 3000);
+        });
+      }
+    } catch (audioError) {
+      console.error('设置音频源错误:', audioError);
+    }
+  };
 
   // 处理文本提交
   const handleSubmit = async (e) => {
@@ -66,6 +128,11 @@ const ChatInterface = () => {
       return;
     }
 
+    // 如果有音频正在播放，先停止
+    if (playingAudioId) {
+      stopAudio();
+    }
+
     await processUserInput(inputText);
     setInputText('');
   };
@@ -74,6 +141,11 @@ const ChatInterface = () => {
   const handleAudioRecorded = async (audioBlob) => {
     setStatus(t('chat.speechToText'));
     setIsProcessing(true);
+
+    // 如果有音频正在播放，先停止
+    if (playingAudioId) {
+      stopAudio();
+    }
 
     try {
       // 添加用户"正在转录中"的消息
@@ -145,42 +217,19 @@ const ChatInterface = () => {
       const response = await sendTextMessage(text);
 
       // 移除临时消息并添加实际回复
+      const messageId = `ai-${Date.now()}`;
       setMessages(prev => prev.filter(msg => msg.id !== aiTempId));
       setMessages(prev => [...prev, {
-        id: `ai-${Date.now()}`,
+        id: messageId,
         text: response.text,
         sender: 'assistant',
         timestamp: new Date().toISOString(),
         audioUrl: response.audio_url
       }]);
 
-      // 播放音频回复
+      // 自动播放音频回复
       if (response.audio_url) {
-        try {
-          // 确保URL是绝对路径
-          const audioUrl = response.audio_url.startsWith('http')
-            ? response.audio_url
-            : `${API_BASE_URL.replace('/api', '')}${response.audio_url}`;
-
-          audioRef.current.src = audioUrl;
-
-          // 尝试预加载音频
-          audioRef.current.load();
-
-          // 播放音频，并处理可能的播放失败
-          const playPromise = audioRef.current.play();
-
-          if (playPromise !== undefined) {
-            playPromise.catch(e => {
-              console.error('音频播放失败:', e);
-              // 显示音频播放错误状态
-              setStatus(t('errors.audioPlaybackError'));
-              setTimeout(() => setStatus(''), 3000);
-            });
-          }
-        } catch (audioError) {
-          console.error('设置音频源错误:', audioError);
-        }
+        playAudio(messageId, response.audio_url);
       }
     } catch (error) {
       console.error('发送消息错误:', error);
@@ -219,31 +268,22 @@ const ChatInterface = () => {
             {message.audioUrl && (
               <div className="message-audio-controls">
                 <button
-                  className="replay-audio"
+                  className={`audio-control ${playingAudioId === message.id ? 'playing' : ''}`}
                   onClick={() => {
-                    try {
-                      // 确保URL是绝对路径
-                      const audioUrl = message.audioUrl.startsWith('http')
-                        ? message.audioUrl
-                        : `${API_BASE_URL.replace('/api', '')}${message.audioUrl}`;
-
-                      audioRef.current.src = audioUrl;
-                      audioRef.current.load();
-
-                      const playPromise = audioRef.current.play();
-                      if (playPromise !== undefined) {
-                        playPromise.catch(e => {
-                          console.error('重放音频失败:', e);
-                          setStatus(t('errors.audioPlaybackError'));
-                          setTimeout(() => setStatus(''), 3000);
-                        });
-                      }
-                    } catch (audioError) {
-                      console.error('设置音频源错误:', audioError);
+                    // 如果当前正在播放这个音频，则停止播放
+                    if (playingAudioId === message.id) {
+                      stopAudio();
+                    } else {
+                      // 否则播放这个音频
+                      playAudio(message.id, message.audioUrl);
                     }
                   }}
                 >
-                  <i className="material-icons">volume_up</i>
+                  {playingAudioId === message.id ? (
+                    <i className="material-icons">stop</i>
+                  ) : (
+                    <i className="material-icons">volume_up</i>
+                  )}
                 </button>
               </div>
             )}
@@ -275,7 +315,7 @@ const ChatInterface = () => {
       </form>
 
       <div className="keyboard-hint">
-        {t('messages.pressSpace')}
+        {t('messages.pressSpace')} | {t('messages.pressEsc')}
       </div>
     </>
   );

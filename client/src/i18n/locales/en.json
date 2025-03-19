@@ -22,6 +22,7 @@
   },
   "messages": {
     "welcome": "Hello! I'm your voice assistant. How can I help you today?",
-    "pressSpace": "You can press the SPACE key to start recording."
+    "pressSpace": "You can press the SPACE key to start recording",
+    "pressEsc": "ESC key to stop audio playback"
   }
 }

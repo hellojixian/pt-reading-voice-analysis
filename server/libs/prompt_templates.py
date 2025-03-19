@@ -7,6 +7,8 @@ OPENAI_ASSISTANT_INSTRUCTION = f"""
 可以从关联的vector_store中为用户推荐他可能感兴趣的数据。
 
 可以通过用户上传的语音文件和参考文本帮助用户纠正用户的英语发音。
+
+如果需要推荐图书，请主动调用中的recommend_books函数。
 """
 
 

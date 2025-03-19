@@ -22,6 +22,7 @@
   },
   "messages": {
     "welcome": "您好！我是您的语音助手。今天我能帮您做什么？",
-    "pressSpace": "您可以按空格键开始录音。"
+    "pressSpace": "您可以按空格键开始录音",
+    "pressEsc": "按ESC键停止音频播放"
   }
 }

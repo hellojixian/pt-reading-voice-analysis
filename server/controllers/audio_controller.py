@@ -24,11 +24,14 @@ def get_audio(filename):
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-def cleanup_temp_files():
+def cleanup_temp_files(app=None):
     """清理临时文件"""
-    for key in list(current_app.config.keys()):
+    # 如果没有传入app参数，则尝试使用current_app
+    config = app.config if app else current_app.config
+
+    for key in list(config.keys()):
         if key.startswith("TEMP_AUDIO_"):
-            file_path = current_app.config[key]
+            file_path = config[key]
             if os.path.exists(file_path):
                 try:
                     os.unlink(file_path)
