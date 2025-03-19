@@ -7,8 +7,10 @@ import { useTranslation } from 'react-i18next';
  * @param {Object} props
  * @param {Function} props.onAudioRecorded - 录音完成后的回调函数
  * @param {boolean} props.isProcessing - 是否正在处理请求
+ * @param {Function} props.stopAudio - 停止正在播放的音频
+ * @param {string|null} props.playingAudioId - 正在播放的音频ID，如果没有则为null
  */
-const RecordButton = ({ onAudioRecorded, isProcessing }) => {
+const RecordButton = ({ onAudioRecorded, isProcessing, stopAudio, playingAudioId }) => {
   const { t } = useTranslation();
   const [isRecording, setIsRecording] = useState(false);
   const [recorder, setRecorder] = useState(null);
@@ -59,6 +61,12 @@ const RecordButton = ({ onAudioRecorded, isProcessing }) => {
       if (e.code === 'Space' && !isProcessing && !isRecording && recorder) {
         // 防止空格键滚动页面
         e.preventDefault();
+
+        // 如果有音频正在播放，先停止
+        if (playingAudioId && stopAudio) {
+          stopAudio();
+        }
+
         startRecording();
       }
     };

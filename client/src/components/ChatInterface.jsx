@@ -311,6 +311,8 @@ const ChatInterface = () => {
         <RecordButton
           onAudioRecorded={handleAudioRecorded}
           isProcessing={isProcessing}
+          stopAudio={stopAudio}
+          playingAudioId={playingAudioId}
         />
       </form>
 

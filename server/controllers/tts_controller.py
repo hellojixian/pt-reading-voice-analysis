@@ -8,6 +8,12 @@ from flask import jsonify, request, current_app
 # 导入服务
 from services.openai_service import OpenAIService
 
+from dotenv import load_dotenv
+
+# 加载环境变量
+load_dotenv()
+
+OPENAI_VOICE = os.getenv("OPENAI_VOICE", "alloy")
 # 初始化服务
 openai_service = OpenAIService()
 
@@ -19,7 +25,7 @@ def text_to_speech():
             return jsonify({"error": "缺少文本内容"}), 400
 
         text = data['text']
-        voice = data.get('voice', 'alloy')  # 默认使用alloy声音
+        voice = data.get('voice', OPENAI_VOICE)  # 默认使用alloy声音
 
         # 生成语音
         audio_data = openai_service.text_to_speech(text, voice)

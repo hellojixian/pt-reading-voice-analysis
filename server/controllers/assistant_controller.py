@@ -6,7 +6,6 @@ import os
 import tempfile
 import time
 from flask import jsonify, request, current_app
-import json
 
 # 导入 OpenAI Assistant 相关库
 import openai
@@ -80,6 +79,7 @@ def assistant_chat():
                 thread_id=thread_id,
                 run_id=run.id
             )
+            print(f"Assistant 运行状态: {run_status.status}")
             if run_status.status == 'completed':
                 break
             elif run_status.status in ['failed', 'cancelled', 'expired']:

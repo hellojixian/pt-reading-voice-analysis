@@ -5,7 +5,6 @@ from flask import Blueprint
 
 # 导入控制器
 from controllers.health_controller import health_check
-from controllers.chat_controller import chat
 from controllers.speech_controller import speech_to_text
 from controllers.tts_controller import text_to_speech
 from controllers.audio_controller import get_audio
@@ -26,12 +25,6 @@ def handle_options(path):
 def api_health_check():
     """健康检查端点"""
     return health_check()
-
-# 聊天路由
-@api.route('/api/chat', methods=['POST'])
-def api_chat():
-    """处理文字聊天请求（传统 Chat API）"""
-    return chat()
 
 # Assistant 聊天路由
 @api.route('/api/assistant-chat', methods=['POST'])

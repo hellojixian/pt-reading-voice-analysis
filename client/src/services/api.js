@@ -1,14 +1,14 @@
 const API_BASE_URL = 'http://localhost:8000/api';
 
 /**
- * 发送文本消息到服务器
+ * 发送文本消息到服务器（使用Assistant API）
  * @param {string} message - 用户输入的文本消息
  * @returns {Promise<Object>} - 包含AI回复文本和音频URL的对象
  */
 export const sendTextMessage = async (message) => {
   try {
-    // 使用mode: 'no-cors'避免触发预检请求
-    const response = await fetch(`${API_BASE_URL}/chat`, {
+    // 使用Assistant API端点
+    const response = await fetch(`${API_BASE_URL}/assistant-chat`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
