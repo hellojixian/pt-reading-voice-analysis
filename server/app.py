@@ -35,7 +35,6 @@ if __name__ == '__main__':
         library_data_file = ds.fetch_all_production_books()
         print(f"Library data file created at: {library_data_file}")
         assistant_id = oa.ensure_assistant(library_data_file)
-        os.unlink(library_data_file)
 
         # 将 assistant_id 保存到应用配置中，以便控制器使用
         app.config['OPENAI_ASSISTANT_ID'] = assistant_id

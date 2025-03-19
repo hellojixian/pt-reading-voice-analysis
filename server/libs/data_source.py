@@ -34,6 +34,11 @@ def fetch_all_production_books():
   """
   从数据库中获取所有的图书信息，并返回一个临时文件的路径
   """
+  # cache file should locate in the project_root/cache folder
+  cache_file = os.path.join(os.path.dirname(__file__), "..", "..", "cache", "production_books.json")
+  if os.path.exists(cache_file):
+    return cache_file
+
   print("📊 Fetching all production books...")
   conn = get_db_connection()
   cursor = conn.cursor()
@@ -63,4 +68,6 @@ def fetch_all_production_books():
   temp_file = tempfile.NamedTemporaryFile(mode='w', delete=False, suffix='.json')
   temp_file.write(library_data)
   temp_file.close()
-  return temp_file.name
+  #move the file to the project root/data folder
+  os.rename(temp_file.name, cache_file)
+  return cache_file
