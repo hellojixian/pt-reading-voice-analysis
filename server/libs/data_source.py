@@ -30,6 +30,41 @@ def close_db_connection():
   return
 
 
+def fetch_book_content(book_id):
+  sql = f"""
+SELECT distinct PERMANENT_ID, TITLE, DESCRIPTION, EXTENDED_BOOK_INFO
+FROM FIVETRAN_DATABASE.PICKATALE_STUDIO_PROD_PUBLIC.REGULAR_BOOK RB
+         INNER JOIN FIVETRAN_DATABASE.PICKATALE_STUDIO_PROD_PUBLIC.PUBLISHED_BOOK PB ON PB.PUBLISHED_BOOK_ID = RB.ID
+         INNER JOIN FIVETRAN_DATABASE.PICKATALE_STUDIO_PROD_PUBLIC.PUBLISHED_BOOK_ENVIRONMENTS PBE
+                    ON PBE.PUBLISHED_BOOK_ID = PB.ID
+         INNER JOIN FIVETRAN_DATABASE.PICKATALE_STUDIO_PROD_PUBLIC.ENVIRONMENT E
+                    ON E.ID = PBE.ENVIRONMENTS_ID
+         INNER JOIN FIVETRAN_DATABASE.PICKATALE_STUDIO_PROD_PUBLIC.BOOK_EXTENDED_INFO BEI on BEI.BOOK_ID = RB.ID
+    AND E.NAME = 'production'
+    AND RB.PERMANENT_ID = '{book_id}';
+  """
+  print("📊 Fetching book content...")
+  conn = get_db_connection()
+  cursor = conn.cursor()
+  cursor.execute(sql)
+  rows = cursor.fetchall()
+  cursor.close()
+  if len(rows) == 0:
+    return None
+  else:
+    extended_info = json.loads(rows[0][3])
+    book_content = ""
+    for page in extended_info:
+      book_content += page["rawText"] + "\n"
+
+    return {
+      "book_id": rows[0][0],
+      "book_title": rows[0][1],
+      "book_description": rows[0][2],
+      "book_content": book_content
+    }
+
+
 def fetch_all_production_books():
   """
   从数据库中获取所有的图书信息，并返回一个临时文件的路径
