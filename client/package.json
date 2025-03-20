@@ -7,6 +7,11 @@
     "start": "parcel public/index.html",
     "build": "parcel build public/index.html"
   },
+  "staticFiles": {
+    "staticPath": [
+      "public"
+    ]
+  },
   "dependencies": {
     "i18next": "^22.5.0",
     "i18next-browser-languagedetector": "^7.1.0",
@@ -15,6 +20,7 @@
     "react-i18next": "^12.3.1"
   },
   "devDependencies": {
-    "parcel-bundler": "^1.12.5"
+    "parcel-bundler": "^1.12.5",
+    "parcel-plugin-static-files-copy": "^2.6.0"
   }
 }
