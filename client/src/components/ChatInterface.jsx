@@ -7,8 +7,8 @@ import { sendTextMessage, sendAudioForTranscription } from '../services/api';
 const API_BASE_URL = 'http://localhost:8000/api';
 
 /**
- * 聊天界面组件
- * 处理用户输入和显示对话历史
+ * Reading Voice Analysis Chat Interface
+ * A Pickatale product for analyzing and improving reading skills
  */
 const ChatInterface = () => {
   const { t } = useTranslation();
@@ -21,17 +21,17 @@ const ChatInterface = () => {
   const chatContainerRef = useRef(null);
   const audioRef = useRef(new Audio());
 
-  // 组件挂载时添加欢迎消息
+  // Add welcome message on component mount
   useEffect(() => {
     setMessages([
       {
         id: 'welcome',
-        text: t('messages.welcome'),
+        text: 'Welcome to Pickatale Reading Assistant! I can analyze your reading voice and provide personalized feedback to help improve your reading skills. Try reading a passage or asking a question.',
         sender: 'assistant',
         timestamp: new Date().toISOString()
       }
     ]);
-  }, [t]);
+  }, []);
 
   // 当消息列表更新时，滚动到底部
   useEffect(() => {
@@ -256,6 +256,24 @@ const ChatInterface = () => {
 
   return (
     <>
+      <div className="header">
+        <h1>
+          <span className="pickatale-logo">Pickatale</span> Reading Assistant
+        </h1>
+        <div className="language-selector">
+          <select onChange={(e) => {
+            // Handle language change
+            const selectedLanguage = e.target.value;
+            if (window.i18n && window.i18n.changeLanguage) {
+              window.i18n.changeLanguage(selectedLanguage);
+            }
+          }}>
+            <option value="en">English</option>
+            <option value="zh">中文</option>
+          </select>
+        </div>
+      </div>
+
       <div className="chat-container" ref={chatContainerRef}>
         {messages.map((message) => (
           <div
@@ -263,7 +281,7 @@ const ChatInterface = () => {
             className={`chat-message ${message.sender === 'user' ? 'user-message' : 'bot-message'} ${message.isError ? 'error-message' : ''} ${message.isTemporary ? 'temporary-message' : ''}`}
           >
             <div className="message-sender">
-              {message.sender === 'user' ? t('chat.you') : t('chat.ai')}
+              {message.sender === 'user' ? 'You' : 'Pickatale Assistant'}
             </div>
 
             {/* 检查是否有图书推荐结果 */}
@@ -281,15 +299,15 @@ const ChatInterface = () => {
               return null;
             })()}
 
-            {/* 显示函数调用结果，例如推荐的书籍 */}
+            {/* Display function call results, such as recommended books */}
             {message.functionResults && message.functionResults.length > 0 && (
               <div className="function-results">
                 {message.functionResults.map((func, index) => {
                   if (func.name === 'recommend_books' && func.result) {
-                    // 处理新的数据结构，直接使用 func.result 数组
+                    // Process new data structure, directly using func.result array
                     return (
                       <div key={index} className="book-recommendations">
-                        <h3>推荐书籍:</h3>
+                        <h3>Recommended Books:</h3>
                         <div className="recommended-books-list">
                           {func.result.map((book, bookIndex) => (
                             <div key={bookIndex} className="recommended-book">
@@ -301,14 +319,14 @@ const ChatInterface = () => {
                               >
                                 📚 {book.book_title} (ID: {book.book_id})
                               </a>
-                              <div className="book-reason">推荐理由: {book.reason}</div>
+                              <div className="book-reason">Why this book: {book.reason}</div>
                             </div>
                           ))}
                         </div>
                       </div>
                     );
                   } else if (func.name === 'recommend_books' && func.arguments && func.arguments.recommended_books) {
-                    // 兼容旧的数据结构，使用 func.arguments.recommended_books
+                    // Compatible with old data structure using func.arguments.recommended_books
                     const { recommendation_summary, recommended_books } = func.arguments;
                     return (
                       <div key={index} className="book-recommendations">
@@ -324,7 +342,7 @@ const ChatInterface = () => {
                               >
                                 📚 {book.book_title} (ID: {book.book_id})
                               </a>
-                              <div className="book-reason">推荐理由: {book.reason}</div>
+                              <div className="book-reason">Why this book: {book.reason}</div>
                             </div>
                           ))}
                         </div>
@@ -369,7 +387,7 @@ const ChatInterface = () => {
           type="text"
           value={inputText}
           onChange={(e) => setInputText(e.target.value)}
-          placeholder={t('chat.placeholder')}
+          placeholder="Ask a question or read a passage..."
           className="text-input"
           disabled={isProcessing}
           onFocus={() => setInputHasFocus(true)}
@@ -392,7 +410,16 @@ const ChatInterface = () => {
       </form>
 
       <div className="keyboard-hint">
-        {t('messages.pressSpace')} | {t('messages.pressEsc')}
+        Press Space to record | Press Esc to stop audio
+      </div>
+
+      <div className="pickatale-footer">
+        <div className="footer-bubbles">
+          <span className="bubble bubble-green"></span>
+          <span className="bubble bubble-yellow"></span>
+          <span className="bubble bubble-blue"></span>
+        </div>
+        <p>© {new Date().getFullYear()} Pickatale. Helping children love reading.</p>
       </div>
     </>
   );
