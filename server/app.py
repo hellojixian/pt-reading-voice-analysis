@@ -17,6 +17,7 @@ app.register_blueprint(api)
 
 # 配置 OpenAI Assistant ID 变量，将在 assistant_controller 中使用
 app.config['OPENAI_ASSISTANT_ID'] = None
+app.config['BOOK_RECOMMANDATION_ASSISTANT_ID'] = None
 
 # 注册启动后回调，添加CORS头
 @app.after_request
@@ -30,15 +31,19 @@ def after_request_callback(response):
 
 if __name__ == '__main__':
     assistant_id = None
+    book_recommandation_assistant_id = None
     import libs.data_source as ds, libs.openai_assistant as oa
     try:
         library_data_file = ds.fetch_all_production_books()
         print(f"Library data file created at: {library_data_file}")
-        assistant_id = oa.ensure_assistant(library_data_file)
+        assistant_id = oa.ensure_assistant()
+        book_recommandation_assistant_id = oa.ensure_assistant_for_recommand_books(library_data_file)
 
         # 将 assistant_id 保存到应用配置中，以便控制器使用
         app.config['OPENAI_ASSISTANT_ID'] = assistant_id
+        app.config['BOOK_RECOMMANDATION_ASSISTANT_ID'] = book_recommandation_assistant_id
         print(f"Assistant ID {assistant_id} saved to app config")
+        print(f"Book Recommendation Assistant ID {book_recommandation_assistant_id} saved to app config")
 
         app.run(host=config.HOST, port=config.PORT, debug=config.DEBUG)
     finally:
@@ -47,3 +52,5 @@ if __name__ == '__main__':
         cleanup_temp_files(app)
         if assistant_id:
             oa.delete_assistant(assistant_id)
+        if book_recommandation_assistant_id:
+            oa.delete_assistant(book_recommandation_assistant_id)

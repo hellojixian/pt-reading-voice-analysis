@@ -72,8 +72,6 @@ def assistant_chat():
         run = client.beta.threads.runs.create(
             thread_id=thread_id,
             assistant_id=assistant_id,
-            # tools=[{"type": "file_search"}],
-            # tool_choice={"type": "file_search"},
         )
 
         # 初始化函数调用结果
@@ -108,11 +106,35 @@ def assistant_chat():
                             "arguments": function_args
                         })
 
-                        # 如果是推荐图书函数，直接返回参数
+                        # 如果是推荐图书函数，调用书籍推荐助手
                         if function_name == "recommend_books":
+                            user_interests = function_args.get("user_interests", "")
+                            print(f"用户兴趣: {user_interests}")
+
+                            # 获取书籍推荐助手 ID
+                            book_recommandation_assistant_id = current_app.config.get('BOOK_RECOMMANDATION_ASSISTANT_ID')
+                            if not book_recommandation_assistant_id:
+                                print("未配置书籍推荐助手 ID，无法提供图书推荐")
+                                recommended_books = []
+                            else:
+                                # 调用 search_books_by_interest 获取推荐书籍
+                                print(f"调用书籍推荐助手 ID: {book_recommandation_assistant_id}")
+                                from libs import openai_assistant as oa
+                                recommended_books = oa.search_books_by_interest(
+                                    book_recommandation_assistant_id,
+                                    user_interests
+                                )
+
+                            # 记录函数调用结果
+                            function_results[-1]["result"] = recommended_books
+
+                            # 返回推荐书籍给对话助手
                             tool_outputs.append({
                                 "tool_call_id": tool_call.id,
-                                "output": json.dumps(function_args)
+                                "output": json.dumps({
+                                    "status": "success",
+                                    "recommended_books": recommended_books
+                                })
                             })
 
                     # 提交函数执行结果给 OpenAI
@@ -144,6 +166,10 @@ def assistant_chat():
         ai_response = ""
         for content in assistant_message.content:
             if content.type == "text":
+                if content.text.annotations:
+                    print(content.text.annotations)
+                print('-------')
+                print(assistant_message)
                 # 使用 openai_assistant 模块中的 clean_text 函数清理文本
                 ai_response += openai_assistant.clean_text(content.text.value)
 

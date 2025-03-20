@@ -13,7 +13,7 @@ const API_BASE_URL = 'http://localhost:8000/api';
 const ChatInterface = () => {
   const { t } = useTranslation();
   const [messages, setMessages] = useState([]);
-  const [inputText, setInputText] = useState('');
+  const [inputText, setInputText] = useState(''); // 用户输入文本
   const [isProcessing, setIsProcessing] = useState(false);
   const [status, setStatus] = useState('');
   const [playingAudioId, setPlayingAudioId] = useState(null); // 跟踪当前播放的音频ID
@@ -265,21 +265,65 @@ const ChatInterface = () => {
             <div className="message-sender">
               {message.sender === 'user' ? t('chat.you') : t('chat.ai')}
             </div>
-            <div className="message-content">{message.text}</div>
+
+            {/* 检查是否有图书推荐结果 */}
+            {(() => {
+              // 查找是否有推荐书籍的函数调用结果
+              const hasBookRecommendations = message.functionResults &&
+                message.functionResults.some(func =>
+                  (func.name === 'recommend_books' && (func.result || (func.arguments && func.arguments.recommended_books)))
+                );
+
+              // 仅当没有书籍推荐结果时才显示AI回复的文本内容
+              if (!hasBookRecommendations) {
+                return <div className="message-content">{message.text}</div>;
+              }
+              return null;
+            })()}
 
             {/* 显示函数调用结果，例如推荐的书籍 */}
             {message.functionResults && message.functionResults.length > 0 && (
               <div className="function-results">
                 {message.functionResults.map((func, index) => {
-                  if (func.name === 'recommend_books') {
+                  if (func.name === 'recommend_books' && func.result) {
+                    // 处理新的数据结构，直接使用 func.result 数组
+                    return (
+                      <div key={index} className="book-recommendations">
+                        <h3>推荐书籍:</h3>
+                        <div className="recommended-books-list">
+                          {func.result.map((book, bookIndex) => (
+                            <div key={bookIndex} className="recommended-book">
+                              <a
+                                href={`https://app.pickatale.com/library/book/${book.book_id}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="book-title-link"
+                              >
+                                📚 {book.book_title} (ID: {book.book_id})
+                              </a>
+                              <div className="book-reason">推荐理由: {book.reason}</div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  } else if (func.name === 'recommend_books' && func.arguments && func.arguments.recommended_books) {
+                    // 兼容旧的数据结构，使用 func.arguments.recommended_books
                     const { recommendation_summary, recommended_books } = func.arguments;
                     return (
                       <div key={index} className="book-recommendations">
-                        <div className="recommendation-summary">{recommendation_summary}</div>
+                        {recommendation_summary && <div className="recommendation-summary">{recommendation_summary}</div>}
                         <div className="recommended-books-list">
                           {recommended_books.map((book, bookIndex) => (
                             <div key={bookIndex} className="recommended-book">
-                              <div className="book-title">📚 {book.book_title} (ID: {book.book_id})</div>
+                              <a
+                                href={`https://app.pickatale.com/library/book/${book.book_id}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="book-title-link"
+                              >
+                                📚 {book.book_title} (ID: {book.book_id})
+                              </a>
                               <div className="book-reason">推荐理由: {book.reason}</div>
                             </div>
                           ))}

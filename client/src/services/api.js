@@ -35,6 +35,32 @@ export const sendTextMessage = async (message) => {
 };
 
 /**
+ * 获取书籍推荐
+ * @param {string} userInterests - 用户的阅读兴趣
+ * @returns {Promise<Object>} - 包含推荐书籍的对象
+ */
+export const getBookRecommendations = async (userInterests) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/recommend-books`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ user_interests: userInterests }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`API错误: ${response.status}`);
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error('获取书籍推荐错误:', error);
+    throw error;
+  }
+};
+
+/**
  * 将音频数据发送到服务器进行语音转文字
  * @param {Blob} audioBlob - 录制的音频数据
  * @returns {Promise<Object>} - 包含转录文本的对象

@@ -189,6 +189,27 @@ body {
   margin-bottom: 4px;
 }
 
+.book-title-link {
+  display: block;
+  font-weight: 500;
+  margin-bottom: 4px;
+  color: var(--primary-color);
+  text-decoration: none;
+  padding: 4px 0;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+}
+
+.book-title-link:hover {
+  text-decoration: underline;
+  background-color: rgba(76, 132, 255, 0.1);
+  padding-left: 4px;
+}
+
+.book-title-link:active {
+  transform: translateY(1px);
+}
+
 .book-reason {
   font-size: 0.9rem;
   color: var(--text-color);
