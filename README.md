@@ -141,6 +141,59 @@ Once running, you can access:
 - `/api/audio`: Audio processing endpoints
 - `/api/tts`: Text-to-speech conversion
 
+## Utility Scripts and Testing
+
+### Book Content Fetcher
+
+The project includes a utility script to fetch book content directly from the command line:
+
+```bash
+# From the project root directory:
+cd server
+./fetch_book.py <book_id>
+
+# Or alternatively:
+python server/fetch_book.py <book_id>
+```
+
+**Features:**
+
+- Retrieves book details using the provided book ID
+- Displays title, description, and a preview of the content
+- Offers to save the full content to a text file
+- Validates input and provides helpful error messages
+
+**Example usage:**
+
+```bash
+./fetch_book.py 12550-1
+```
+
+This will fetch and display information for the book with ID "12550-1". The script currently supports test book IDs: 12550-1, 2590-3, and 2940-5.
+
+### Testing the Data Source Module
+
+The project includes comprehensive tests for the `fetch_book_content()` function:
+
+```bash
+# From the project root directory:
+cd server
+python -m pytest tests/ -v
+```
+
+**Test Features:**
+
+- Unit tests for book content retrieval functionality
+- Tests all supported book IDs: 12550-1, 2590-3, and 2940-5
+- Validates data structure and content of responses
+- Tests error handling for invalid book IDs and database issues
+- Uses mocks to avoid actual database connections during testing
+
+Test files are located in the `server/tests/` directory:
+- `test_data_source.py`: Contains the actual test cases
+- `conftest.py`: Contains pytest configuration
+- `README.md`: Detailed documentation about the tests
+
 ## Troubleshooting
 
 If you encounter any issues:
