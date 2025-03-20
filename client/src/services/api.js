@@ -2,10 +2,19 @@ const API_BASE_URL = 'http://localhost:8000/api';
 
 /**
  * 发送文本消息到服务器（使用Assistant API）
+ * 支持两种模式：常规模式和SSE实时状态更新模式
+ *
  * @param {string} message - 用户输入的文本消息
+ * @param {function} onStatusUpdate - 状态更新回调函数 (SSE模式使用)
  * @returns {Promise<Object>} - 包含AI回复文本和音频URL的对象
  */
-export const sendTextMessage = async (message) => {
+export const sendTextMessage = async (message, onStatusUpdate = null) => {
+  // 如果提供了状态更新回调，使用SSE模式
+  if (onStatusUpdate) {
+    return sendTextMessageWithSSE(message, onStatusUpdate);
+  }
+
+  // 否则使用常规模式
   try {
     // 使用Assistant API端点
     const response = await fetch(`${API_BASE_URL}/assistant-chat`, {
@@ -32,6 +41,64 @@ export const sendTextMessage = async (message) => {
       audio_url: null
     };
   }
+};
+
+/**
+ * 使用SSE（Server-Sent Events）发送文本消息，接收实时状态更新
+ *
+ * @param {string} message - 用户输入的文本消息
+ * @param {function} onStatusUpdate - 状态更新回调函数
+ * @returns {Promise<Object>} - 包含AI回复文本和音频URL的对象
+ */
+const sendTextMessageWithSSE = (message, onStatusUpdate) => {
+  return new Promise((resolve, reject) => {
+    try {
+      // 创建一个带查询参数的URL
+      const encodedMessage = encodeURIComponent(message);
+      const url = `${API_BASE_URL}/assistant-chat-stream?message=${encodedMessage}`;
+
+      // 创建SSE连接
+      const eventSource = new EventSource(url);
+      let finalResponse = null;
+
+      // 监听状态更新事件
+      eventSource.addEventListener('status', (event) => {
+        const statusData = JSON.parse(event.data);
+        onStatusUpdate(statusData.status);
+      });
+
+      // 监听进度更新事件
+      eventSource.addEventListener('progress', (event) => {
+        const progressData = JSON.parse(event.data);
+        onStatusUpdate(progressData.status, progressData.progress);
+      });
+
+      // 监听完成事件
+      eventSource.addEventListener('complete', (event) => {
+        finalResponse = JSON.parse(event.data);
+        eventSource.close();
+        resolve(finalResponse);
+      });
+
+      // 监听错误
+      eventSource.addEventListener('error', (event) => {
+        console.error('SSE错误:', event);
+        eventSource.close();
+
+        // 如果已经收到了最终响应，则使用它
+        if (finalResponse) {
+          resolve(finalResponse);
+        } else {
+          // 否则返回错误
+          reject(new Error('服务器连接中断'));
+        }
+      });
+
+    } catch (error) {
+      console.error('SSE连接错误:', error);
+      reject(error);
+    }
+  });
 };
 
 /**

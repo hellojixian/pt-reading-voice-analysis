@@ -6,7 +6,9 @@ import os
 import tempfile
 import time
 import json
-from flask import jsonify, request, current_app
+import threading
+from functools import wraps
+from flask import jsonify, request, current_app, Response, stream_with_context
 
 # 导入 OpenAI Assistant 相关库
 import openai
@@ -39,8 +41,301 @@ def init_assistant_thread():
         print(f"初始化线程错误: {str(e)}")
         raise
 
+# 辅助函数 - 创建SSE格式的消息
+def format_sse(event, data):
+    """
+    格式化用于服务器发送事件（SSE）的消息
+
+    参数:
+        event: 事件名称
+        data: 事件数据（将被转换为JSON）
+
+    返回:
+        格式化的SSE消息字符串
+    """
+    return f"event: {event}\ndata: {json.dumps(data)}\n\n"
+
+
+def assistant_chat_stream():
+    """使用服务器发送事件（SSE）处理基于 Assistant API 的流式聊天请求"""
+    # 获取消息内容
+    message = request.args.get('message')
+    if not message:
+        return jsonify({"error": "缺少消息内容"}), 400
+
+    # 初始化或获取用户的线程ID
+    try:
+        thread_id = init_assistant_thread()
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+    def generate():
+        # 发送初始状态
+        yield format_sse("status", {"status": "正在分析您的请求..."})
+
+        client = openai.OpenAI()
+
+        # 获取当前 Assistant ID
+        assistant_id = os.getenv('OPENAI_ASSISTANT_ID', None)
+        if not assistant_id:
+            assistant_id = current_app.config.get('OPENAI_ASSISTANT_ID')
+            if not assistant_id:
+                yield format_sse("error", {"error": "未配置 Assistant ID"})
+                return
+
+        try:
+            # 向线程添加用户消息
+            client.beta.threads.messages.create(
+                thread_id=thread_id,
+                role="user",
+                content=message
+            )
+
+            yield format_sse("status", {"status": "正在思考中..."})
+
+            # 运行助手
+            run = client.beta.threads.runs.create(
+                thread_id=thread_id,
+                assistant_id=assistant_id,
+            )
+
+            # 初始化函数调用结果
+            function_results = []
+
+            # 等待运行完成
+            while True:
+                run_status = client.beta.threads.runs.retrieve(
+                    thread_id=thread_id,
+                    run_id=run.id
+                )
+
+                # 发送当前状态更新
+                yield format_sse("status", {"status": f"Assistant状态: {run_status.status}"})
+
+                if run_status.status == 'completed':
+                    yield format_sse("status", {"status": "生成回复中..."})
+                    break
+
+                elif run_status.status == 'requires_action':
+                    yield format_sse("status", {"status": "执行函数调用中..."})
+
+                    # 处理函数调用请求
+                    if run_status.required_action.type == "submit_tool_outputs":
+                        tool_calls = run_status.required_action.submit_tool_outputs.tool_calls
+                        tool_outputs = []
+
+                        for tool_call in tool_calls:
+                            function_name = tool_call.function.name
+                            function_args = json.loads(tool_call.function.arguments)
+
+                            # 记录函数调用
+                            function_results.append({
+                                "name": function_name,
+                                "arguments": function_args
+                            })
+
+                            yield format_sse("status", {"status": f"调用函数: {function_name}"})
+
+                            # 根据函数名称处理不同的函数调用
+                            if function_name == "recommend_books":
+                                yield format_sse("progress", {
+                                    "status": "正在分析阅读兴趣并推荐图书...",
+                                    "progress": {
+                                        "type": "book_recommendation",
+                                        "icon": "📚"
+                                    }
+                                })
+
+                                # 处理图书推荐函数调用
+                                user_interests = function_args.get("user_interests", "")
+
+                                # 获取书籍推荐助手 ID
+                                book_recommandation_assistant_id = current_app.config.get('BOOK_RECOMMANDATION_ASSISTANT_ID')
+                                if not book_recommandation_assistant_id:
+                                    yield format_sse("status", {"status": "未配置书籍推荐助手 ID，无法提供图书推荐"})
+                                    recommended_books = []
+                                else:
+                                    # 调用 search_books_by_interest 获取推荐书籍
+                                    from libs import openai_assistant as oa
+                                    recommended_books = oa.search_books_by_interest(
+                                        book_recommandation_assistant_id,
+                                        user_interests
+                                    )
+
+                                    yield format_sse("status", {"status": "找到匹配的书籍推荐"})
+
+                                # 记录函数调用结果
+                                function_results[-1]["result"] = recommended_books
+
+                                # 返回推荐书籍给对话助手
+                                tool_outputs.append({
+                                    "tool_call_id": tool_call.id,
+                                    "output": json.dumps({
+                                        "status": "success",
+                                        "recommended_books": recommended_books
+                                    })
+                                })
+
+                            elif function_name == "search_book_by_title":
+                                yield format_sse("progress", {
+                                    "status": "正在搜索书名匹配的图书...",
+                                    "progress": {
+                                        "type": "book_search",
+                                        "icon": "🔍"
+                                    }
+                                })
+
+                                # 处理根据书名搜索图书函数调用
+                                title = function_args.get("title", "")
+
+                                # 获取书籍推荐助手 ID来获取关联的vector_store_id
+                                book_recommandation_assistant_id = current_app.config.get('BOOK_RECOMMANDATION_ASSISTANT_ID')
+                                if not book_recommandation_assistant_id:
+                                    yield format_sse("status", {"status": "未配置书籍推荐助手 ID，无法搜索图书"})
+                                    matched_books = []
+                                else:
+                                    # 获取助手详情以获取vector_store_id
+                                    from libs import openai_assistant as oa
+                                    client = openai.OpenAI()
+                                    assistant = client.beta.assistants.retrieve(book_recommandation_assistant_id)
+
+                                    if assistant.tool_resources and assistant.tool_resources.file_search:
+                                        vector_store_ids = assistant.tool_resources.file_search.vector_store_ids
+                                        if vector_store_ids:
+                                            vector_store_id = vector_store_ids[0]
+                                            yield format_sse("status", {"status": f"正在使用vector_store搜索书名: {title}"})
+                                            matched_books = oa.search_book_by_title(vector_store_id, title)
+
+                                            if matched_books:
+                                                yield format_sse("status", {"status": f"找到{len(matched_books)}本匹配的图书"})
+                                            else:
+                                                yield format_sse("status", {"status": "未找到匹配的图书"})
+                                        else:
+                                            yield format_sse("status", {"status": "未找到关联的vector_store"})
+                                            matched_books = []
+                                    else:
+                                        yield format_sse("status", {"status": "助手未配置file_search工具"})
+                                        matched_books = []
+
+                                # 记录函数调用结果
+                                function_results[-1]["result"] = matched_books
+
+                                # 返回匹配的图书给对话助手
+                                tool_outputs.append({
+                                    "tool_call_id": tool_call.id,
+                                    "output": json.dumps({
+                                        "status": "success",
+                                        "matched_books": matched_books
+                                    })
+                                })
+
+                            elif function_name == "get_book_content":
+                                yield format_sse("progress", {
+                                    "status": "正在获取书籍内容...",
+                                    "progress": {
+                                        "type": "book_content",
+                                        "icon": "📖"
+                                    }
+                                })
+
+                                # 处理获取图书内容函数调用
+                                book_id = function_args.get("book_id", "")
+
+                                # 调用data_source获取图书内容
+                                from libs import openai_assistant as oa
+                                book_data = oa.get_book_content(book_id)
+
+                                # 记录函数调用结果
+                                if book_data:
+                                    yield format_sse("status", {"status": f"成功获取《{book_data['book_title']}》的内容"})
+                                    function_results[-1]["result"] = {
+                                        "book_id": book_data["book_id"],
+                                        "book_title": book_data["book_title"],
+                                        "status": "success"
+                                    }
+                                else:
+                                    yield format_sse("status", {"status": f"未找到ID为{book_id}的书籍"})
+                                    function_results[-1]["result"] = {
+                                        "book_id": book_id,
+                                        "status": "not_found"
+                                    }
+
+                                # 返回图书内容给对话助手
+                                tool_outputs.append({
+                                    "tool_call_id": tool_call.id,
+                                    "output": json.dumps({
+                                        "status": "success" if book_data else "not_found",
+                                        "book": book_data
+                                    })
+                                })
+
+                        # 提交函数执行结果给 OpenAI
+                        client.beta.threads.runs.submit_tool_outputs(
+                            thread_id=thread_id,
+                            run_id=run.id,
+                            tool_outputs=tool_outputs
+                        )
+
+                elif run_status.status in ['failed', 'cancelled', 'expired']:
+                    yield format_sse("error", {"error": f"Assistant 运行失败: {run_status.status}"})
+                    return
+
+                # 短暂等待后再检查状态
+                time.sleep(0.5)
+
+            # 获取最新的助手回复
+            messages = client.beta.threads.messages.list(thread_id=thread_id)
+
+            # 获取最新的助手回复（第一条消息是最新的）
+            assistant_message = None
+            for msg in messages.data:
+                if msg.role == "assistant":
+                    assistant_message = msg
+                    break
+
+            if not assistant_message:
+                yield format_sse("error", {"error": "未收到助手回复"})
+                return
+
+            # 提取文本内容
+            ai_response = ""
+            for content in assistant_message.content:
+                if content.type == "text":
+                    if content.text.annotations:
+                        print(content.text.annotations)
+                    # 使用 openai_assistant 模块中的 clean_text 函数清理文本
+                    ai_response += openai_assistant.clean_text(content.text.value)
+
+            # 生成语音
+            yield format_sse("status", {"status": "正在生成语音回复..."})
+            audio_data = openai_service.text_to_speech(ai_response)
+
+            # 创建临时文件保存音频
+            with tempfile.NamedTemporaryFile(delete=False, suffix='.mp3') as temp_file:
+                temp_file.write(audio_data)
+                audio_path = temp_file.name
+
+            # 构建响应
+            response = {
+                "text": ai_response,
+                "audio_url": f"/api/audio/{os.path.basename(audio_path)}",
+                "function_results": function_results
+            }
+
+            # 保存文件路径以便后续请求
+            current_app.config[f"TEMP_AUDIO_{os.path.basename(audio_path)}"] = audio_path
+
+            # 发送完成事件
+            yield format_sse("complete", response)
+
+        except Exception as e:
+            yield format_sse("error", {"error": str(e)})
+
+    return Response(stream_with_context(generate()), content_type="text/event-stream")
+
+
 def assistant_chat():
-    """处理基于 Assistant API 的聊天请求"""
+    """处理基于 Assistant API 的常规聊天请求"""
     try:
         data = request.json
         if not data or 'message' not in data:
@@ -106,8 +401,9 @@ def assistant_chat():
                             "arguments": function_args
                         })
 
-                        # 如果是推荐图书函数，调用书籍推荐助手
+                        # 根据函数名称处理不同的函数调用
                         if function_name == "recommend_books":
+                            # 处理图书推荐函数调用
                             user_interests = function_args.get("user_interests", "")
                             print(f"用户兴趣: {user_interests}")
 
@@ -134,6 +430,78 @@ def assistant_chat():
                                 "output": json.dumps({
                                     "status": "success",
                                     "recommended_books": recommended_books
+                                })
+                            })
+
+                        elif function_name == "search_book_by_title":
+                            # 处理根据书名搜索图书函数调用
+                            title = function_args.get("title", "")
+                            print(f"搜索书名: {title}")
+
+                            # 获取书籍推荐助手 ID来获取关联的vector_store_id
+                            book_recommandation_assistant_id = current_app.config.get('BOOK_RECOMMANDATION_ASSISTANT_ID')
+                            if not book_recommandation_assistant_id:
+                                print("未配置书籍推荐助手 ID，无法搜索图书")
+                                matched_books = []
+                            else:
+                                # 获取助手详情以获取vector_store_id
+                                from libs import openai_assistant as oa
+                                client = openai.OpenAI()
+                                assistant = client.beta.assistants.retrieve(book_recommandation_assistant_id)
+
+                                if assistant.tool_resources and assistant.tool_resources.file_search:
+                                    vector_store_ids = assistant.tool_resources.file_search.vector_store_ids
+                                    if vector_store_ids:
+                                        vector_store_id = vector_store_ids[0]
+                                        print(f"使用vector_store_id: {vector_store_id}搜索书籍")
+                                        matched_books = oa.search_book_by_title(vector_store_id, title)
+                                    else:
+                                        print("未找到关联的vector_store")
+                                        matched_books = []
+                                else:
+                                    print("助手未配置file_search工具")
+                                    matched_books = []
+
+                            # 记录函数调用结果
+                            function_results[-1]["result"] = matched_books
+
+                            # 返回匹配的图书给对话助手
+                            tool_outputs.append({
+                                "tool_call_id": tool_call.id,
+                                "output": json.dumps({
+                                    "status": "success",
+                                    "matched_books": matched_books
+                                })
+                            })
+
+                        elif function_name == "get_book_content":
+                            # 处理获取图书内容函数调用
+                            book_id = function_args.get("book_id", "")
+                            print(f"获取图书内容，book_id: {book_id}")
+
+                            # 调用data_source获取图书内容
+                            from libs import openai_assistant as oa
+                            book_data = oa.get_book_content(book_id)
+
+                            # 记录函数调用结果
+                            if book_data:
+                                function_results[-1]["result"] = {
+                                    "book_id": book_data["book_id"],
+                                    "book_title": book_data["book_title"],
+                                    "status": "success"
+                                }
+                            else:
+                                function_results[-1]["result"] = {
+                                    "book_id": book_id,
+                                    "status": "not_found"
+                                }
+
+                            # 返回图书内容给对话助手
+                            tool_outputs.append({
+                                "tool_call_id": tool_call.id,
+                                "output": json.dumps({
+                                    "status": "success" if book_data else "not_found",
+                                    "book": book_data
                                 })
                             })
 

@@ -3,6 +3,26 @@ import { useTranslation } from 'react-i18next';
 import RecordButton from './RecordButton';
 import { sendTextMessage, sendAudioForTranscription } from '../services/api';
 
+// ActiveBookBanner组件 - 显示当前正在讨论的书籍信息
+const ActiveBookBanner = ({ book, onExitBookMode }) => {
+  if (!book) return null;
+
+  return (
+    <div className="active-book-banner">
+      <div className="book-info">
+        <span className="book-icon">📚</span>
+        <div className="book-details">
+          <h3>{book.book_title}</h3>
+          <span className="book-id">ID: {book.book_id}</span>
+        </div>
+      </div>
+      <button className="exit-book-mode" onClick={onExitBookMode}>
+        结束讨论
+      </button>
+    </div>
+  );
+};
+
 // 用于音频URL构建
 const API_BASE_URL = 'http://localhost:8000/api';
 
@@ -16,6 +36,8 @@ const ChatInterface = () => {
   const [inputText, setInputText] = useState(''); // 用户输入文本
   const [isProcessing, setIsProcessing] = useState(false);
   const [status, setStatus] = useState('');
+  const [processingSteps, setProcessingSteps] = useState([]); // 处理步骤列表
+  const [activeBook, setActiveBook] = useState(null); // 当前讨论的书籍
   const [playingAudioId, setPlayingAudioId] = useState(null); // 跟踪当前播放的音频ID
   const [inputHasFocus, setInputHasFocus] = useState(false); // 跟踪输入框是否有焦点
   const chatContainerRef = useRef(null);
@@ -120,6 +142,13 @@ const ChatInterface = () => {
     }
   };
 
+  // 退出书籍讨论模式
+  const exitBookMode = () => {
+    setActiveBook(null);
+    setStatus('已退出书籍讨论模式');
+    setTimeout(() => setStatus(''), 2000);
+  };
+
   // 处理文本提交
   const handleSubmit = async (e) => {
     e?.preventDefault();
@@ -187,6 +216,28 @@ const ChatInterface = () => {
     }
   };
 
+  // 处理状态更新
+  const handleStatusUpdate = (statusMsg, progress = null) => {
+    setStatus(statusMsg);
+
+    // 如果是新步骤，添加到处理步骤列表
+    if (progress !== null) {
+      setProcessingSteps(prev => {
+        // 检查是否已有相同类型的步骤
+        const existingIndex = prev.findIndex(step => step.type === progress.type);
+        if (existingIndex >= 0) {
+          // 更新现有步骤
+          const updatedSteps = [...prev];
+          updatedSteps[existingIndex] = { ...progress, status: statusMsg };
+          return updatedSteps;
+        } else {
+          // 添加新步骤
+          return [...prev, { ...progress, status: statusMsg }];
+        }
+      });
+    }
+  };
+
   // 处理用户输入（文本或语音转录）
   const processUserInput = async (text, addUserMessage = true) => {
     // 将用户输入添加到消息列表（仅当addUserMessage为true时）
@@ -202,6 +253,7 @@ const ChatInterface = () => {
 
     setIsProcessing(true);
     setStatus(t('chat.thinking'));
+    setProcessingSteps([]); // 清空处理步骤
 
     try {
       // 添加AI"正在思考"的临时消息
@@ -214,8 +266,8 @@ const ChatInterface = () => {
         isTemporary: true
       }]);
 
-      // 发送用户消息到服务器
-      const response = await sendTextMessage(text);
+      // 发送用户消息到服务器，使用SSE接收实时状态更新
+      const response = await sendTextMessage(text, handleStatusUpdate);
 
       // 移除临时消息并添加实际回复
       const messageId = `ai-${Date.now()}`;
@@ -228,6 +280,26 @@ const ChatInterface = () => {
         audioUrl: response.audio_url,
         functionResults: response.function_results || [] // 添加函数调用结果
       }]);
+
+      // 处理函数调用结果，更新activeBook状态
+      if (response.function_results && response.function_results.length > 0) {
+        for (const func of response.function_results) {
+          // 处理获取书籍内容的函数调用
+          if (func.name === 'get_book_content' && func.result && func.result.status === 'success') {
+            // 设置当前活跃的书籍
+            setActiveBook({
+              book_id: func.result.book_id,
+              book_title: func.result.book_title
+            });
+          }
+          // 如果用户要求退出书籍讨论模式
+          else if ((func.name === 'search_book_by_title' || func.name === 'recommend_books')
+                  && activeBook !== null) {
+            // 这意味着用户可能想讨论新书，重置activeBook
+            setActiveBook(null);
+          }
+        }
+      }
 
       // 自动播放音频回复
       if (response.audio_url) {
@@ -243,6 +315,7 @@ const ChatInterface = () => {
         isError: true
       }]);
     } finally {
+      setProcessingSteps([]); // 清空处理步骤
       setStatus('');
       setIsProcessing(false);
     }
@@ -258,7 +331,14 @@ const ChatInterface = () => {
     <>
       <div className="header">
         <h1>
-          <span className="pickatale-logo">Pickatale</span> Reading Assistant
+          <div className="full-logo">
+            <img
+              src="./assets/logo.png"
+              alt="Pickatale"
+              className="pickatale-logo-image"
+            />
+            <span>Reading Assistant</span>
+          </div>
         </h1>
         <div className="language-selector">
           <select onChange={(e) => {
@@ -274,7 +354,21 @@ const ChatInterface = () => {
         </div>
       </div>
 
+      {/* 活跃书籍横幅 */}
+      <ActiveBookBanner book={activeBook} onExitBookMode={exitBookMode} />
+
       <div className="chat-container" ref={chatContainerRef}>
+        {/* 处理步骤显示 */}
+        {processingSteps.length > 0 && (
+          <div className="processing-steps">
+            {processingSteps.map((step, index) => (
+              <div key={index} className="processing-step">
+                <span className="step-icon">{step.icon || '⚙️'}</span>
+                <span className="step-status">{step.status}</span>
+              </div>
+            ))}
+          </div>
+        )}
         {messages.map((message) => (
           <div
             key={message.id}
@@ -299,15 +393,16 @@ const ChatInterface = () => {
               return null;
             })()}
 
-            {/* Display function call results, such as recommended books */}
+            {/* Display function call results, such as recommended books or search results */}
             {message.functionResults && message.functionResults.length > 0 && (
               <div className="function-results">
                 {message.functionResults.map((func, index) => {
+                  // 推荐书籍结果
                   if (func.name === 'recommend_books' && func.result) {
-                    // Process new data structure, directly using func.result array
+                    // 使用新数据结构 func.result 数组
                     return (
                       <div key={index} className="book-recommendations">
-                        <h3>Recommended Books:</h3>
+                        <h3>推荐书籍:</h3>
                         <div className="recommended-books-list">
                           {func.result.map((book, bookIndex) => (
                             <div key={bookIndex} className="recommended-book">
@@ -319,14 +414,15 @@ const ChatInterface = () => {
                               >
                                 📚 {book.book_title} (ID: {book.book_id})
                               </a>
-                              <div className="book-reason">Why this book: {book.reason}</div>
+                              <div className="book-reason">推荐理由: {book.reason}</div>
                             </div>
                           ))}
                         </div>
                       </div>
                     );
-                  } else if (func.name === 'recommend_books' && func.arguments && func.arguments.recommended_books) {
-                    // Compatible with old data structure using func.arguments.recommended_books
+                  }
+                  // 兼容旧数据结构 func.arguments.recommended_books
+                  else if (func.name === 'recommend_books' && func.arguments && func.arguments.recommended_books) {
                     const { recommendation_summary, recommended_books } = func.arguments;
                     return (
                       <div key={index} className="book-recommendations">
@@ -342,9 +438,42 @@ const ChatInterface = () => {
                               >
                                 📚 {book.book_title} (ID: {book.book_id})
                               </a>
-                              <div className="book-reason">Why this book: {book.reason}</div>
+                              <div className="book-reason">推荐理由: {book.reason}</div>
                             </div>
                           ))}
+                        </div>
+                      </div>
+                    );
+                  }
+                  // 书籍搜索结果
+                  else if (func.name === 'search_book_by_title' && func.result) {
+                    return (
+                      <div key={index} className="book-search-results">
+                        <h3>搜索到的书籍:</h3>
+                        <div className="matched-books-list">
+                          {func.result.map((book, bookIndex) => (
+                            <div key={bookIndex} className="matched-book">
+                              <div className="book-title">
+                                📚 {book.book_title} (ID: {book.book_id})
+                              </div>
+                              {book.book_Description && (
+                                <div className="book-description">{book.book_Description}</div>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  }
+                  // 获取书籍内容结果
+                  else if (func.name === 'get_book_content' && func.result) {
+                    return (
+                      <div key={index} className="book-content-result">
+                        <h3>书籍内容:</h3>
+                        <div className="book-status">
+                          {func.result.status === 'success'
+                            ? `成功获取《${func.result.book_title}》(ID: ${func.result.book_id})的内容`
+                            : `未找到ID为 ${func.arguments.book_id} 的书籍`}
                         </div>
                       </div>
                     );

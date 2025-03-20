@@ -23,6 +23,10 @@ OPENAI_ASSISTANT_INSTRUCTION = f"""
 
 可以通过用户上传的语音文件和参考文本帮助用户纠正用户的英语发音。
 
+你还可以讨论特定图书的详细内容。当用户表达想讨论某本书时，你可以通过搜索书名或者使用 book_id 来获取这本书的完整内容。
+一旦开始讨论某本书，请记住这本书的内容，并能回答用户关于这本书情节、人物、主题等具体问题，
+直到用户明确表示想讨论另一本书或结束当前话题。
+
 整个对话中，AI的回复语言必须和用户保持一致，如果用户说英语，AI也要说英语。
 """
 
@@ -115,6 +119,40 @@ def ensure_assistant() -> str:
                         "required": ["user_interests"]
                     }
                 }
+            },
+            {
+                "type": "function",
+                "function": {
+                    "name": "search_book_by_title",
+                    "description": "根据书名搜索对应的图书ID。当用户提到想讨论某本书，但只提供了书名时，使用此功能查找匹配的图书。",
+                    "parameters": {
+                        "type": "object",
+                        "properties": {
+                            "title": {
+                                "type": "string",
+                                "description": "用户提到的书名"
+                            }
+                        },
+                        "required": ["title"]
+                    }
+                }
+            },
+            {
+                "type": "function",
+                "function": {
+                    "name": "get_book_content",
+                    "description": "获取指定book_id的图书完整内容。当确定用户想讨论某本特定图书时使用此功能。",
+                    "parameters": {
+                        "type": "object",
+                        "properties": {
+                            "book_id": {
+                                "type": "string",
+                                "description": "图书的唯一标识符"
+                            }
+                        },
+                        "required": ["book_id"]
+                    }
+                }
             }
         ]
     )
@@ -167,6 +205,149 @@ def ensure_assistant_for_recommand_books(library_data_path: str) -> str:
 
     print(f"✅ Book Recommander Assistant created with ID: {assistant.id}")
     return assistant.id
+
+def search_book_by_title(vector_store_id: str, title: str) -> list:
+    """
+    根据书名在vector store中搜索匹配的图书
+
+    参数:
+        vector_store_id: 图书数据vector store的ID
+        title: 要搜索的书名
+
+    返回:
+        匹配的图书列表，每本书包含book_id, book_title, book_Description
+    """
+    try:
+        # 创建新的对话线程
+        thread = client.beta.threads.create()
+        print(f"📌 Thread created with ID: {thread.id} for book title search")
+
+        # 添加用户搜索请求到线程
+        client.beta.threads.messages.create(
+            thread_id=thread.id,
+            role="user",
+            content=f"找到书名包含'{title}'的所有图书，返回它们的book_id, book_title和book_Description"
+        )
+
+        # 创建临时助手进行搜索
+        temp_assistant = client.beta.assistants.create(
+            name="Book Search Assistant",
+            instructions="你是一个图书搜索助手，帮助用户在Library Vector Store中查找匹配书名的图书。",
+            model=OPENAI_MODEL,
+            tools=[{"type": "file_search"}],
+            tool_resources={"file_search": {"vector_store_ids": [vector_store_id]}}  # 关联vector store
+        )
+
+        # 运行助手
+        run = client.beta.threads.runs.create(
+            thread_id=thread.id,
+            assistant_id=temp_assistant.id
+        )
+
+        matched_books = []
+
+        # 等待运行完成并处理结果
+        while True:
+            run_status = client.beta.threads.runs.retrieve(thread_id=thread.id, run_id=run.id)
+            print(f"🔄 Book search status: {run_status.status}")
+
+            if run_status.status == "completed":
+                # 获取助手的回复
+                messages = client.beta.threads.messages.list(thread_id=thread.id)
+
+                # 解析回复中的图书信息
+                for msg in messages.data:
+                    if msg.role == "assistant":
+                        for content in msg.content:
+                            if content.type == "text":
+                                text = clean_text(content.text.value)
+                                print(f"💬 Book search response: {text}")
+
+                                # 尝试从文本中提取JSON格式的图书信息
+                                try:
+                                    # 使用正则表达式找出所有JSON格式的书籍数据
+                                    import re
+                                    json_matches = re.findall(r'({[\s\S]*?book_id[\s\S]*?})', text)
+
+                                    if json_matches:
+                                        for json_str in json_matches:
+                                            try:
+                                                book = json.loads(json_str)
+                                                if "book_id" in book and "book_title" in book:
+                                                    matched_books.append(book)
+                                            except:
+                                                continue
+                                    else:
+                                        # 如果没有找到JSON格式，尝试从文本提取信息
+                                        book_blocks = re.split(r'\n\s*\n', text)
+                                        for block in book_blocks:
+                                            book_info = {}
+
+                                            id_match = re.search(r'book_id[\s:]*([^,\s\n]+)', block)
+                                            if id_match:
+                                                book_info["book_id"] = id_match.group(1).strip('"\'')
+
+                                            title_match = re.search(r'book_title[\s:]*([^\n]+)', block)
+                                            if title_match:
+                                                book_info["book_title"] = title_match.group(1).strip('"\'')
+
+                                            desc_match = re.search(r'book_Description[\s:]*([^\n]+(?:\n[^\n]+)*)', block)
+                                            if desc_match:
+                                                book_info["book_Description"] = desc_match.group(1).strip('"\'')
+
+                                            if "book_id" in book_info and "book_title" in book_info:
+                                                matched_books.append(book_info)
+
+                                except Exception as e:
+                                    print(f"⚠️ Error parsing book info: {str(e)}")
+                break
+
+            elif run_status.status in ["failed", "cancelled", "expired"]:
+                print(f"❌ Book search failed with status: {run_status.status}")
+                break
+
+            # 等待后再检查状态
+            time.sleep(1)
+
+        # 清理临时助手
+        client.beta.assistants.delete(temp_assistant.id)
+
+        return matched_books
+
+    except Exception as e:
+        print(f"❌ Error in search_book_by_title: {str(e)}")
+        return []
+
+def get_book_content(book_id: str) -> dict:
+    """
+    根据book_id获取图书完整内容
+
+    参数:
+        book_id: 图书的唯一标识符
+
+    返回:
+        包含图书详情和内容的字典，若未找到则返回None
+    """
+    try:
+        # 从本地数据库获取图书内容
+        import sys, os
+        # 确保能导入data_source模块
+        sys.path.append(os.path.dirname(__file__))
+        from data_source import fetch_book_content
+
+        # 调用fetch_book_content获取图书内容
+        book_data = fetch_book_content(book_id)
+
+        if book_data:
+            print(f"📚 Found book: {book_data['book_title']} (ID: {book_data['book_id']})")
+            return book_data
+        else:
+            print(f"⚠️ Book not found with ID: {book_id}")
+            return None
+
+    except Exception as e:
+        print(f"❌ Error in get_book_content: {str(e)}")
+        return None
 
 def search_books_by_interest(book_recommendation_assistant_id: str, user_interests: str) -> list:
     """

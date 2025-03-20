@@ -8,7 +8,7 @@ from controllers.health_controller import health_check
 from controllers.speech_controller import speech_to_text
 from controllers.tts_controller import text_to_speech
 from controllers.audio_controller import get_audio
-from controllers.assistant_controller import assistant_chat
+from controllers.assistant_controller import assistant_chat, assistant_chat_stream
 
 # 创建蓝图
 api = Blueprint('api', __name__)
@@ -31,6 +31,12 @@ def api_health_check():
 def api_assistant_chat():
     """处理文字聊天请求（Assistant API）"""
     return assistant_chat()
+
+# Assistant 聊天SSE流式路由
+@api.route('/api/assistant-chat-stream', methods=['GET'])
+def api_assistant_chat_stream():
+    """处理文字聊天请求（SSE流式API）"""
+    return assistant_chat_stream()
 
 # 语音转文字路由
 @api.route('/api/speech-to-text', methods=['POST'])
