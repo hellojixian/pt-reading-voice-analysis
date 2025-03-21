@@ -89,11 +89,23 @@ def assistant_chat_stream():
                 context = []  # 流式模式下不需要对话上下文
                 warning_message = openai_service.generate_friendly_warning(categories, lang, context)
 
+                # 生成语音
+                audio_data = openai_service.text_to_speech(warning_message)
+
+                # 创建临时文件保存音频
+                with tempfile.NamedTemporaryFile(delete=False, suffix='.mp3') as temp_file:
+                    temp_file.write(audio_data)
+                    audio_path = temp_file.name
+
                 # 构建警告响应
                 response = {
                     "text": warning_message,
-                    "is_warning": True
+                    "is_warning": True,
+                    "audio_url": f"/api/audio/{os.path.basename(audio_path)}"
                 }
+
+                # 保存文件路径以便后续请求
+                current_app.config[f"TEMP_AUDIO_{os.path.basename(audio_path)}"] = audio_path
 
                 # 直接返回警告，不继续处理请求
                 yield format_sse("complete", response)
@@ -382,11 +394,25 @@ def assistant_chat():
             context = []  # 非流式模式下暂不使用对话上下文
             warning_message = openai_service.generate_friendly_warning(categories, lang, context)
 
+            # 生成语音
+            audio_data = openai_service.text_to_speech(warning_message)
+
+            # 创建临时文件保存音频
+            with tempfile.NamedTemporaryFile(delete=False, suffix='.mp3') as temp_file:
+                temp_file.write(audio_data)
+                audio_path = temp_file.name
+
             # 构建警告响应并直接返回
-            return jsonify({
+            response = {
                 "text": warning_message,
-                "is_warning": True
-            })
+                "is_warning": True,
+                "audio_url": f"/api/audio/{os.path.basename(audio_path)}"
+            }
+
+            # 保存文件路径以便后续请求
+            current_app.config[f"TEMP_AUDIO_{os.path.basename(audio_path)}"] = audio_path
+
+            return jsonify(response)
 
         # 内容审核通过，继续正常处理
         # 初始化或获取用户的线程ID

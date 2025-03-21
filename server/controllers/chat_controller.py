@@ -41,11 +41,23 @@ def chat():
             # 移除最后一个用户消息
             conversation_history.pop()
 
+            # 生成语音
+            audio_data = openai_service.text_to_speech(ai_response)
+
+            # 创建临时文件保存音频
+            with tempfile.NamedTemporaryFile(delete=False, suffix='.mp3') as temp_file:
+                temp_file.write(audio_data)
+                audio_path = temp_file.name
+
             # 标记为特殊消息类型
             response = {
                 "text": ai_response,
-                "is_warning": True
+                "is_warning": True,
+                "audio_url": f"/api/audio/{os.path.basename(audio_path)}"
             }
+
+            # 保存文件路径以便后续请求
+            current_app.config[f"TEMP_AUDIO_{os.path.basename(audio_path)}"] = audio_path
         else:
             # 正常获取AI回复
             ai_response = openai_service.get_chat_response(conversation_history)

@@ -102,8 +102,8 @@ const useChat = (onAudioPlayRequest, processBookFunctionResults) => {
       // Clear status message after getting server response
       setStatus('');
 
-      // Auto-play audio reply - only for non-warning messages
-      if (response.audio_url && !response.is_warning) {
+      // Auto-play audio reply - for all messages including warnings
+      if (response.audio_url) {
         onAudioPlayRequest(messageId, response.audio_url);
       }
     } catch (error) {

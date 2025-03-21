@@ -47,8 +47,35 @@ class OpenAIService:
             system_prompt += "不要重复或引用用户的不当内容。使用友好、善良但坚定的语气。"
 
             # 准备用户内容类别信息
-            flagged_categories = [cat for cat, cat_obj in categories.items() if getattr(cat_obj, 'flagged', False)]
-            category_info = f"用户询问了关于以下内容的问题: {', '.join(flagged_categories)}"
+            # 处理categories对象，适配不同版本的OpenAI API返回的格式
+            # 获取被标记的类别
+            flagged_categories = []
+            if hasattr(categories, 'items'):
+                # Dict-like object
+                for cat, cat_obj in categories.items():
+                    if isinstance(cat_obj, bool) and cat_obj:
+                        flagged_categories.append(cat)
+                    elif hasattr(cat_obj, 'flagged') and cat_obj.flagged:
+                        flagged_categories.append(cat)
+            elif hasattr(categories, '__dict__'):
+                # 对象格式，有属性
+                for cat, value in categories.__dict__.items():
+                    if isinstance(value, bool) and value:
+                        flagged_categories.append(cat)
+            else:
+                # 简单尝试直接遍历所有可能被标记的类别
+                possible_categories = [
+                    'sexual', 'hate', 'harassment', 'self-harm',
+                    'sexual/minors', 'hate/threatening', 'violence/graphic',
+                    'self-harm/intent', 'self-harm/instructions', 'harassment/threatening',
+                    'violence'
+                ]
+                for cat in possible_categories:
+                    if hasattr(categories, cat) and getattr(categories, cat):
+                        flagged_categories.append(cat)
+
+            # 生成类别信息
+            category_info = f"用户询问了关于以下内容的问题: {', '.join(flagged_categories) if flagged_categories else '不适当内容'}"
 
             # 添加对话上下文概括（如果有）
             context_summary = ""
