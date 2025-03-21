@@ -222,7 +222,7 @@ const ChatInterface = () => {
   const exitBookMode = () => {
     setActiveBook(null);
     setStatus(t('book.exitedBookMode'));
-    setTimeout(() => setStatus(''), 2000);
+    setTimeout(() => setStatus(''), 3000); // 更新为3秒，与其他状态消息保持一致
   };
 
   // 处理文本提交
@@ -287,14 +287,20 @@ const ChatInterface = () => {
         isError: true
       }]);
     } finally {
-      setStatus('');
+      // No need to manually reset status here anymore since it's auto-hidden
       setIsProcessing(false);
     }
   };
 
   // 处理状态更新
   const handleStatusUpdate = (statusMsg, progress = null) => {
+    // 设置状态消息
     setStatus(statusMsg);
+
+    // 设置自动隐藏定时器 (3秒后)
+    if (statusMsg) {
+      setTimeout(() => setStatus(''), 3000);
+    }
 
     // 如果是新步骤，添加到处理步骤列表
     if (progress !== null) {
@@ -328,26 +334,17 @@ const ChatInterface = () => {
     }
 
     setIsProcessing(true);
-    setStatus(t('chat.thinking'));
+    setStatus(t('chat.thinking')); // This will show the status message at the bottom
     setProcessingSteps([]); // 清空处理步骤
 
     try {
-      // 添加AI"正在思考"的临时消息
-      const aiTempId = `ai-${Date.now()}`;
-      setMessages(prev => [...prev, {
-        id: aiTempId,
-        text: t('chat.thinking'),
-        sender: 'assistant',
-        timestamp: new Date().toISOString(),
-        isTemporary: true
-      }]);
+      // 不再添加临时的"thinking"消息，直接使用status message替代
 
       // 发送用户消息到服务器，使用SSE接收实时状态更新
       const response = await sendTextMessage(text, handleStatusUpdate);
 
-      // 移除临时消息并添加实际回复
+      // 添加实际回复
       const messageId = `ai-${Date.now()}`;
-      setMessages(prev => prev.filter(msg => msg.id !== aiTempId));
       setMessages(prev => [...prev, {
         id: messageId,
         text: response.text,
@@ -392,7 +389,7 @@ const ChatInterface = () => {
       }]);
     } finally {
       setProcessingSteps([]); // 清空处理步骤
-      setStatus('');
+      // No need to manually reset status here anymore since it's auto-hidden
       setIsProcessing(false);
     }
   };
@@ -601,6 +598,8 @@ const ChatInterface = () => {
             )}
           </div>
         ))}
+
+        {/* Status message appears within the chat flow */}
         {status && <div className="status-message">{status}</div>}
       </div>
 

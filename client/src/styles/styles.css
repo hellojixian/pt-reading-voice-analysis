@@ -658,16 +658,49 @@ body::after {
   background-color: var(--accent-color-blue);
 }
 
-/* Status message styling */
+/* Status message styling - appears as a normal message in the chat flow */
 .status-message {
-  padding: 8px 12px;
-  background-color: rgba(42, 86, 66, 0.1);
-  border-radius: 8px;
+  padding: 14px 18px;
+  background-color: var(--chat-bot-bg);
   color: var(--primary-color);
-  font-size: 0.9rem;
-  text-align: center;
-  margin: 8px 0;
+  border-radius: 18px;
+  border-bottom-left-radius: 4px;
+  border-left: 3px solid var(--accent-color-blue);
+  font-size: 0.95rem;
+  font-weight: 500;
+  text-align: left;
+  max-width: 80%;
+  box-shadow: 0 1px 3px rgba(42, 86, 66, 0.1);
+  margin-bottom: 16px;
+  float: left;
+  clear: both;
+  position: relative;
   animation: fadeIn 0.3s ease-in-out;
+}
+
+/* Tail similar to bot message with blue border extension */
+.status-message::before {
+  content: '';
+  position: absolute;
+  bottom: 15px;
+  left: -10px;
+  width: 0;
+  height: 0;
+  border-style: solid;
+  border-width: 10px 10px 10px 0;
+  border-color: transparent var(--chat-bot-bg) transparent transparent;
+}
+
+/* Add blue border extension to fill the gap */
+.status-message::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: -3px; /* Align with the left border */
+  width: 3px;
+  height: 15px; /* Height up to where the tail starts */
+  background-color: var(--accent-color-blue);
+  border-bottom-left-radius: 4px;
 }
 
 /* 媒体查询 - 响应式设计 */
