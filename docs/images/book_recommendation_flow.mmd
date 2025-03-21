@@ -1,0 +1,43 @@
+sequenceDiagram
+    participant User
+    participant Client
+    participant Server
+    participant AssistantService
+    participant OpenAIAssistant as "Learning Assistant"
+    participant BookRecommender as "Book Recommendation Assistant"
+    participant VectorStore as "Vector Store"
+
+    User->>Client: "Can you recommend some science fiction books?"
+    Client->>Server: POST /api/assistant-chat
+    Server->>AssistantService: process_chat()
+    AssistantService->>OpenAIAssistant: Add user message to thread
+    OpenAIAssistant->>OpenAIAssistant: Analyze user request
+
+    Note over OpenAIAssistant: Identifies book recommendation intent
+
+    OpenAIAssistant-->>AssistantService: Call recommend_books function
+
+    Note over AssistantService: function_name: "recommend_books"<br/>arguments: {"user_interests": "science fiction"}
+
+    AssistantService->>BookRecommender: search_books_by_interest()
+
+    BookRecommender->>VectorStore: Search for matching books
+    VectorStore-->>BookRecommender: Return matching book data
+
+    BookRecommender->>BookRecommender: Format recommendations
+    BookRecommender-->>AssistantService: Return recommended books
+
+    Note over AssistantService: Function result with book recommendations
+
+    AssistantService->>OpenAIAssistant: Submit function results
+    OpenAIAssistant->>OpenAIAssistant: Generate response with recommendations
+    OpenAIAssistant-->>AssistantService: Return complete response
+
+    AssistantService->>AssistantService: Generate audio from response
+    AssistantService-->>Server: Return response with text, HTML, audio URL
+    Server-->>Client: JSON response
+
+    Client->>Client: processBookFunctionResults()
+    Client->>Client: Display recommendations
+    Client->>Client: Play audio (if enabled)
+    Client-->>User: Show recommendations with explanation

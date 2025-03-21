@@ -11,6 +11,8 @@
 
 The PT Reading Voice Analysis application uses OpenAI's Assistant API to provide intelligent conversation capabilities centered around book discussions and recommendations. This document details how the AI Assistant integration works, the function calls used to extend its capabilities, and the business logic flows that drive the application.
 
+![Assistant Architecture](images/assistant_architecture.png)
+
 ## Assistant Types
 
 The application uses two primary Assistant configurations:
@@ -67,6 +69,8 @@ assistant = client.beta.assistants.create(
 ## Function Calls Architecture
 
 The application defines several function calls that extend the Assistant's capabilities:
+
+![Function Call Flow](images/function_call_flow.png)
 
 ### 1. recommend_books
 
@@ -211,7 +215,11 @@ def _execute_function(self, function_name: str, function_args: Dict[str, Any]) -
 
 ## Business Logic Flows
 
+The following sections describe the key business logic flows in the system, illustrated with sequence diagrams.
+
 ### User Book Discussion Flow
+
+![Book Discussion Flow](images/book_discussion_flow.png)
 
 1. **Book Mention**: User mentions wanting to discuss a specific book
    - Example: "I'd like to discuss Pride and Prejudice"
@@ -258,6 +266,8 @@ def _execute_function(self, function_name: str, function_args: Dict[str, Any]) -
 
 ### Book Recommendation Flow
 
+![Book Recommendation Flow](images/book_recommendation_flow.png)
+
 1. **Interest Expression**: User expresses interest in certain types of books
    - Example: "Can you recommend some science fiction books for teenagers?"
 
@@ -290,6 +300,8 @@ def _execute_function(self, function_name: str, function_args: Dict[str, Any]) -
    ```
 
 ### Real-time Response Flow (SSE)
+
+![SSE Streaming Flow](images/sse_streaming_flow.png)
 
 For enhanced user experience, the system implements Server-Sent Events (SSE) for streaming responses:
 

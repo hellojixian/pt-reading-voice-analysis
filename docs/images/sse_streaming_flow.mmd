@@ -1,0 +1,62 @@
+sequenceDiagram
+    participant User
+    participant Client
+    participant EventSource as "Event Source"
+    participant Server
+    participant AssistantService
+    participant OpenAIAssistant as "Learning Assistant"
+    participant Functions as "Function Handlers"
+
+    User->>Client: "Find science fiction books"
+    Client->>Client: Call sendTextMessageWithSSE
+    Client->>EventSource: Create new EventSource
+
+    EventSource->>Server: GET /api/assistant-chat-stream?message=...
+    Server->>AssistantService: chat_stream()
+
+    Note over AssistantService: Initialize stream response
+
+    AssistantService->>EventSource: event: status<br/>data: {"status": "Analyzing request..."}
+    EventSource->>Client: onStatusUpdate callback
+    Client->>User: Display "Analyzing request..."
+
+    AssistantService->>OpenAIAssistant: Add user message to thread
+    AssistantService->>OpenAIAssistant: Create and start run
+
+    loop Check run status until completed or requires action
+        AssistantService->>OpenAIAssistant: Retrieve run status
+        OpenAIAssistant-->>AssistantService: Return current status
+
+        AssistantService->>EventSource: event: status<br/>data: {"status": "Current status: [status]"}
+        EventSource->>Client: onStatusUpdate callback
+        Client->>User: Update status display
+    end
+
+    alt Run requires function call
+        OpenAIAssistant-->>AssistantService: Function call required
+
+        AssistantService->>EventSource: event: progress<br/>data: {"status": "Processing book_recommendation..."}
+        EventSource->>Client: onStatusUpdate callback
+        Client->>User: Show progress indicator
+
+        AssistantService->>Functions: Execute function
+        Functions-->>AssistantService: Return function result
+
+        AssistantService->>OpenAIAssistant: Submit function results
+    end
+
+    OpenAIAssistant->>OpenAIAssistant: Generate final response
+    OpenAIAssistant-->>AssistantService: Return response
+
+    AssistantService->>AssistantService: Generate audio from response
+    AssistantService->>AssistantService: Prepare complete response object
+
+    AssistantService->>EventSource: event: complete<br/>data: {"text": "...", "audio_url": "..."}
+    EventSource->>Client: onComplete callback
+
+    Client->>EventSource: Close EventSource connection
+    Client->>Client: Process response
+    Client->>Client: Update UI with response
+    Client->>User: Display complete response
+
+    Note over Client: Client may also handle error events from the stream

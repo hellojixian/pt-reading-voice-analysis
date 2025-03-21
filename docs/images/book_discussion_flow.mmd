@@ -1,0 +1,57 @@
+sequenceDiagram
+    participant User
+    participant Client
+    participant Server
+    participant AssistantService
+    participant OpenAIAssistant as "Learning Assistant"
+    participant BookSearch as "Book Search"
+    participant DataSource as "Book Data Source"
+
+    User->>Client: "Let's discuss Pride and Prejudice"
+    Client->>Server: POST /api/assistant-chat
+    Server->>AssistantService: process_chat()
+    AssistantService->>OpenAIAssistant: Add user message to thread
+    OpenAIAssistant->>OpenAIAssistant: Analyze user request
+
+    Note over OpenAIAssistant: Identifies book discussion intent
+
+    OpenAIAssistant-->>AssistantService: Call search_book_by_title function
+
+    Note over AssistantService: function_name: "search_book_by_title"<br/>arguments: {"title": "Pride and Prejudice"}
+
+    AssistantService->>BookSearch: search_book_by_title()
+    BookSearch->>BookSearch: Search for matching books
+    BookSearch-->>AssistantService: Return matching books
+    AssistantService->>OpenAIAssistant: Submit search results
+
+    OpenAIAssistant->>OpenAIAssistant: Format book options
+    OpenAIAssistant-->>AssistantService: Return response with book options
+    AssistantService-->>Server: Return response
+    Server-->>Client: JSON response
+    Client-->>User: Show book options
+
+    User->>Client: "Yes, let's discuss the first book"
+    Client->>Server: POST /api/assistant-chat
+    Server->>AssistantService: process_chat()
+    AssistantService->>OpenAIAssistant: Add user message to thread
+    OpenAIAssistant->>OpenAIAssistant: Analyze user confirmation
+
+    OpenAIAssistant-->>AssistantService: Call get_book_content function
+
+    Note over AssistantService: function_name: "get_book_content"<br/>arguments: {"book_id": "12345-1"}
+
+    AssistantService->>DataSource: get_book_content()
+    DataSource-->>AssistantService: Return book content
+    AssistantService->>OpenAIAssistant: Submit book content
+
+    OpenAIAssistant->>OpenAIAssistant: Process book content
+    OpenAIAssistant-->>AssistantService: Return response with book discussion
+
+    AssistantService->>AssistantService: Generate audio from response
+    AssistantService-->>Server: Return response with text, HTML, audio URL
+    Server-->>Client: JSON response
+
+    Client->>Client: processBookFunctionResults()
+    Client->>Client: Display active book banner
+    Client->>Client: Play audio (if enabled)
+    Client-->>User: Show book discussion

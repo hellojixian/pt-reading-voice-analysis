@@ -1,0 +1,29 @@
+flowchart TD
+    User(User) --> |Interacts with| Client[Client Application]
+    Client --> |Sends Requests| Server[Server]
+    Server --> |Processes Requests| AssistantService[Assistant Service]
+
+    subgraph "Assistant API Integration"
+        AssistantService --> |Creates/Manages| LearningAssistant[Learning Assistant]
+        AssistantService --> |Creates/Manages| BookRecommender[Book Recommendation Assistant]
+
+        LearningAssistant --> |Calls Functions| FunctionHandler[Function Handler]
+
+        FunctionHandler --> |recommend_books| BookRecommender
+        FunctionHandler --> |search_book_by_title| BookSearch[Book Search]
+        FunctionHandler --> |get_book_content| BookContent[Book Content]
+
+        BookRecommender --> |Searches| VectorStore[(Vector Store)]
+        BookSearch --> |Searches| VectorStore
+        BookContent --> |Retrieves from| DataSource[(Book Data Source)]
+    end
+
+    AssistantService --> |Converts Text to Speech| AudioService[Audio Service]
+    AudioService --> |Returns Audio URL| Server
+    Server --> |Returns Response| Client
+    Client --> |Displays to| User
+
+    style LearningAssistant fill:#f9f,stroke:#333,stroke-width:2px
+    style BookRecommender fill:#bbf,stroke:#333,stroke-width:2px
+    style VectorStore fill:#dfd,stroke:#333,stroke-width:2px
+    style DataSource fill:#dfd,stroke:#333,stroke-width:2px

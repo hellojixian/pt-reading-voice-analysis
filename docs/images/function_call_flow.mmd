@@ -1,0 +1,46 @@
+sequenceDiagram
+    participant OpenAIAssistant as "Learning Assistant"
+    participant AssistantService
+    participant Functions as "Function Handlers"
+    participant ExternalServices as "External Services"
+
+    Note over OpenAIAssistant: Processing user request<br/>Determines function needed
+
+    OpenAIAssistant->>AssistantService: requires_action status<br/>with function_call details
+
+    Note over AssistantService: Extracts function call info:<br/>name, arguments, tool_call_id
+
+    AssistantService->>AssistantService: Parse function arguments
+
+    alt recommend_books function
+        AssistantService->>Functions: Call recommend_books handler<br/>with user_interests
+        Functions->>ExternalServices: search_books_by_interest()<br/>Creates thread with Book Recommendation Assistant
+        ExternalServices-->>Functions: Return recommended books
+        Functions-->>AssistantService: Return book recommendations
+
+    else search_book_by_title function
+        AssistantService->>Functions: Call search_book_by_title handler<br/>with title
+        Functions->>ExternalServices: search_book_by_title()<br/>Search vector store by title
+        ExternalServices-->>Functions: Return matched books
+        Functions-->>AssistantService: Return matched books list
+
+    else get_book_content function
+        AssistantService->>Functions: Call get_book_content handler<br/>with book_id
+        Functions->>ExternalServices: get_book_content()<br/>Fetch book from data source
+        ExternalServices-->>Functions: Return book content
+        Functions-->>AssistantService: Return book data
+    end
+
+    Note over AssistantService: Prepares tool_outputs with<br/>function results as JSON string
+
+    AssistantService->>AssistantService: Format each function result
+    AssistantService->>AssistantService: Create tool_outputs array
+
+    AssistantService->>OpenAIAssistant: submit_tool_outputs()<br/>with tool_call_id and output
+
+    Note over OpenAIAssistant: Processes function outputs<br/>and continues generating response
+
+    OpenAIAssistant->>OpenAIAssistant: Generate final response
+    OpenAIAssistant-->>AssistantService: Return completed response
+
+    Note over AssistantService: Updates function_results list<br/>for client-side processing
