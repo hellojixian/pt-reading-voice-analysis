@@ -1,0 +1,34 @@
+flowchart TD
+    UserActor([User])
+
+    subgraph "System"
+        UC1[Voice Conversation]
+        UC2[Get Book Recommendations]
+        UC3[Search for Books]
+        UC4[Discuss Book Content]
+        UC5[Record Voice]
+        UC6[Listen to AI Responses]
+        UC7[Switch Language]
+    end
+
+    UserActor -->|uses| UC1
+    UserActor -->|requests| UC2
+    UserActor -->|performs| UC3
+    UserActor -->|engages in| UC4
+    UserActor -->|records| UC5
+    UserActor -->|listens to| UC6
+    UserActor -->|selects| UC7
+
+    UC5 -->|transcribed to text| UC1
+    UC2 -->|returns list| UC4
+    UC3 -->|after finding book| UC4
+    UC1 -->|generates audio| UC6
+
+    style UserActor fill:#f96,stroke:#333,stroke-width:2px
+    style UC1 fill:#bbf,stroke:#333,stroke-width:1px
+    style UC2 fill:#bbf,stroke:#333,stroke-width:1px
+    style UC3 fill:#bbf,stroke:#333,stroke-width:1px
+    style UC4 fill:#bbf,stroke:#333,stroke-width:1px
+    style UC5 fill:#bbf,stroke:#333,stroke-width:1px
+    style UC6 fill:#bbf,stroke:#333,stroke-width:1px
+    style UC7 fill:#bbf,stroke:#333,stroke-width:1px

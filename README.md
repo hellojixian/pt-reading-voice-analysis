@@ -1,10 +1,28 @@
-# PT Reading Voice Analysis
+# Pickatale AI Reading Assistant
 
 A voice analysis and conversation platform supporting voice input, text interaction, and intelligent responses.
 
 ## Project Overview
 
 PT Reading Voice Analysis is an application that combines speech recognition, natural language processing, and text-to-speech conversion technologies to analyze voice input and provide intelligent conversation capabilities. The project consists of a React frontend and a Flask backend, leveraging OpenAI's API including the Assistant API for advanced conversation features and book-related functionalities.
+
+### System Architecture
+
+![System Architecture](docs/images/system_architecture.png)
+
+The architecture diagram above shows the main components of the system and how they interact with each other.
+
+### Component Diagram
+
+![Component Diagram](docs/images/component_diagram.png)
+
+This diagram illustrates the relationships between different components in both frontend and backend.
+
+### Use Case Diagram
+
+![Use Case Diagram](docs/images/use_case_diagram.png)
+
+The use case diagram shows the primary interactions users can have with the system.
 
 ### Key Features
 
@@ -165,6 +183,26 @@ Detailed documentation is available in the following files:
 - [Server API Documentation](docs/server-api.md) - Complete reference for all backend API endpoints, request/response formats, and features
 - [Client API Documentation](docs/client-api.md) - Comprehensive guide to frontend APIs, React hooks, and client-side functionality
 - [AI Assistant Documentation](docs/ai-assistant.md) - Detailed explanation of OpenAI Assistant integration, function calls, and business logic flows
+
+## Business Logic Flows
+
+### Book Recommendation Flow
+
+![Book Recommendation Flow](docs/images/book_recommendation_flow.png)
+
+The diagram above illustrates the process of recommending books based on user interests.
+
+### Book Discussion Flow
+
+![Book Discussion Flow](docs/images/book_discussion_flow.png)
+
+This diagram shows how users can discuss specific book content through the system.
+
+### Real-time Streaming Response
+
+![SSE Streaming Flow](docs/images/sse_streaming_flow.png)
+
+This diagram illustrates how the system delivers real-time responses using Server-Sent Events.
 
 ## Assistant Service Functionality
 

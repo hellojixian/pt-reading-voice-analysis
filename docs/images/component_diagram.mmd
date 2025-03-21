@@ -1,0 +1,66 @@
+flowchart LR
+    subgraph Client[Frontend Components]
+        ReactApp[React App]
+        ReactApp --> Components[UI Components]
+        ReactApp --> Hooks[React Hooks]
+        ReactApp --> Services[API Services]
+
+        Components --> BookComp[Book Components]
+        Components --> ChatComp[Chat Components]
+        Components --> MsgComp[Message Components]
+        Components --> RecButton[Record Button]
+        Components --> LangSelect[Language Selector]
+
+        Hooks --> UseChat[useChat]
+        Hooks --> UseAudio[useAudio]
+        Hooks --> UseBookState[useBookState]
+
+        Services --> ApiService[API Service]
+    end
+
+    subgraph Server[Backend Components]
+        Flask[Flask Application]
+        Flask --> Routes[Routes]
+        Flask --> Controllers[Controllers]
+        Flask --> APIEndpoints[API Endpoints]
+
+        Controllers --> AssistantCtrl[Assistant Controller]
+        Controllers --> AudioCtrl[Audio Controller]
+        Controllers --> ChatCtrl[Chat Controller]
+        Controllers --> SpeechCtrl[Speech Controller]
+        Controllers --> HealthCtrl[Health Controller]
+
+        ApiService -.->|HTTP Requests| APIEndpoints
+
+        Routes --> Middleware[Middleware]
+    end
+
+    subgraph Services[Service Layer]
+        AssistantSvc[Assistant Service]
+        SpeechSvc[Speech Service]
+        OpenAISvc[OpenAI Service]
+        DataSvc[Data Service]
+
+        AssistantCtrl -.->|calls| AssistantSvc
+        AudioCtrl -.->|calls| SpeechSvc
+        ChatCtrl -.->|calls| OpenAISvc
+        SpeechCtrl -.->|calls| SpeechSvc
+
+        AssistantSvc -.->|uses| OpenAISvc
+        SpeechSvc -.->|uses| OpenAISvc
+    end
+
+    subgraph ExternalServices[External Services]
+        OpenAIAPI[OpenAI API]
+        Vector[(Vector Store)]
+        BookData[(Book Data)]
+
+        OpenAISvc -.->|calls| OpenAIAPI
+        AssistantSvc -.->|uses| Vector
+        AssistantSvc -.->|accesses| BookData
+    end
+
+    style Client fill:#f9f,stroke:#333,stroke-width:2px
+    style Server fill:#bbf,stroke:#333,stroke-width:2px
+    style Services fill:#bfb,stroke:#333,stroke-width:2px
+    style ExternalServices fill:#fbb,stroke:#333,stroke-width:2px

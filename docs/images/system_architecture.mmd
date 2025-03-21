@@ -1,0 +1,43 @@
+flowchart TD
+    User[User] --> |Interacts with| Frontend[Frontend]
+    Frontend --> |API Requests| Backend[Backend]
+    Backend --> |Speech Processing| SpeechService[Speech Service]
+    Backend --> |AI Conversations| AssistantService[Assistant Service]
+    Backend --> |Temp Files| FileSystem[(File System)]
+
+    subgraph Frontend Components
+        Frontend --> |Contains| UI[React UI Components]
+        UI --> |Uses| Hooks[React Hooks]
+        UI --> |Contains| Components[React Components]
+        Components --> BookComponents[Book Components]
+        Components --> ChatComponents[Chat Components]
+        Components --> MessageComponents[Message Components]
+        Hooks --> useAudio[useAudio]
+        Hooks --> useChat[useChat]
+        Hooks --> useBookState[useBookState]
+    end
+
+    subgraph Backend Services
+        AssistantService --> |Uses| OpenAIService[OpenAI Service]
+        SpeechService --> |Uses| OpenAIService
+        AssistantService --> |Thread Management| ThreadMgmt[Thread Management]
+        AssistantService --> |Calls Functions| FunctionHandler[Function Handler]
+        FunctionHandler --> |Book Recommendations| BookRec[Book Recommendations]
+        FunctionHandler --> |Book Search| BookSearch[Book Search]
+        FunctionHandler --> |Book Content| BookContent[Book Content]
+    end
+
+    subgraph External Services
+        OpenAIService --> |API Calls| OpenAI[OpenAI API]
+        OpenAI --> |Assistants API| AssistantsAPI[Assistants API]
+        OpenAI --> |Chat API| ChatAPI[Chat API]
+        OpenAI --> |Speech API| SpeechAPI[Speech API]
+        BookRec --> |Vector Search| VectorStore[(Vector Store)]
+        BookContent --> |Retrieves From| DataSource[(Book Data Source)]
+    end
+
+    style Frontend fill:#f9f,stroke:#333,stroke-width:2px
+    style Backend fill:#bbf,stroke:#333,stroke-width:2px
+    style OpenAI fill:#dfb,stroke:#333,stroke-width:2px
+    style VectorStore fill:#dfd,stroke:#333,stroke-width:2px
+    style DataSource fill:#dfd,stroke:#333,stroke-width:2px
