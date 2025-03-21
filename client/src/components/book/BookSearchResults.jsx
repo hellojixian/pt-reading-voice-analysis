@@ -13,8 +13,8 @@ const BookSearchResults = ({ functionResult }) => {
 
   if (!functionResult) return null;
 
-  // Direct array in result (old format)
-  if (Array.isArray(functionResult.result)) {
+  // Check for books in the old format (direct array)
+  if (Array.isArray(functionResult.result) && functionResult.result.length > 0) {
     return (
       <div className="book-search-results">
         <h3>{t('book.searchResults')}</h3>
@@ -39,8 +39,10 @@ const BookSearchResults = ({ functionResult }) => {
     );
   }
 
-  // New format with matched_books field
-  if (functionResult.result && functionResult.result.matched_books) {
+  // Check for books in the new format with matched_books field
+  if (functionResult.result &&
+      functionResult.result.matched_books &&
+      functionResult.result.matched_books.length > 0) {
     return (
       <div className="book-search-results">
         <h3>{t('book.searchResults')}</h3>
@@ -65,6 +67,7 @@ const BookSearchResults = ({ functionResult }) => {
     );
   }
 
+  // Don't render anything if no books were found
   return null;
 };
 
