@@ -1,18 +1,31 @@
 {
   "app": {
     "title": "Pickatale 学习助手",
-    "language": "语言"
+    "language": "语言",
+    "readingAssistant": "阅读助手"
   },
   "chat": {
     "placeholder": "在此输入您的消息...",
+    "askQuestion": "提问或阅读段落...",
     "send": "发送",
     "record": "按住录音",
     "recording": "录音中...",
     "ai": "AI助手",
     "you": "你",
+    "pickataleAssistant": "Pickatale 助手",
     "thinking": "思考中...",
     "speechToText": "将语音转换为文本...",
     "textToSpeech": "生成语音回复中..."
+  },
+  "book": {
+    "endDiscussion": "结束讨论",
+    "exitedBookMode": "已退出书籍讨论模式",
+    "recommendedBooks": "推荐书籍:",
+    "searchResults": "搜索到的书籍:",
+    "bookContent": "书籍内容:",
+    "recommendationReason": "推荐理由:",
+    "fetchSuccess": "成功获取《{title}》(ID: {bookId})的内容",
+    "fetchFailed": "未找到ID为 {bookId} 的书籍"
   },
   "errors": {
     "recordingFailed": "录音失败，请检查您的麦克风。",
@@ -21,8 +34,12 @@
     "audioPlaybackError": "音频播放失败，请重试。"
   },
   "messages": {
-    "welcome": "您好！我是您的语音助手。今天我能帮您做什么？",
+    "welcome": "欢迎使用Pickatale阅读助手！我能分析您的阅读语音并提供个性化反馈，帮助提高您的阅读技能。尝试阅读一段文字或提出问题。",
     "pressSpace": "您可以按空格键开始录音",
-    "pressEsc": "按ESC键停止音频播放"
+    "pressEsc": "按ESC键停止音频播放",
+    "keyboardHint": "按空格键录音 | 按ESC键停止音频"
+  },
+  "footer": {
+    "copyright": "© {year} Pickatale. 帮助孩子爱上阅读。"
   }
 }

@@ -3,8 +3,74 @@ import { useTranslation } from 'react-i18next';
 import RecordButton from './RecordButton';
 import { sendTextMessage, sendAudioForTranscription } from '../services/api';
 
+// Simple function to render basic Markdown
+const renderMarkdown = (text) => {
+  if (!text) return null;
+
+  // Split by line breaks to handle paragraphs
+  const paragraphs = text.split('\n\n');
+
+  return (
+    <>
+      {paragraphs.map((paragraph, i) => {
+        // Skip empty paragraphs
+        if (!paragraph.trim()) return null;
+
+        // Handle headers
+        if (paragraph.startsWith('# ')) {
+          return <h1 key={i}>{paragraph.substring(2)}</h1>;
+        } else if (paragraph.startsWith('## ')) {
+          return <h2 key={i}>{paragraph.substring(3)}</h2>;
+        } else if (paragraph.startsWith('### ')) {
+          return <h3 key={i}>{paragraph.substring(4)}</h3>;
+        }
+
+        // Handle lists (simple implementation)
+        if (paragraph.includes('\n- ')) {
+          const items = paragraph.split('\n- ');
+          return (
+            <ul key={i}>
+              {items[0] && <p>{items[0]}</p>}
+              {items.slice(1).map((item, j) => (
+                <li key={j}>{item}</li>
+              ))}
+            </ul>
+          );
+        }
+
+        // Handle numbered lists (simple implementation)
+        if (/\n\d+\.\s/.test(paragraph)) {
+          const items = paragraph.split(/\n\d+\.\s/);
+          return (
+            <ol key={i}>
+              {items[0] && <p>{items[0]}</p>}
+              {items.slice(1).map((item, j) => (
+                <li key={j}>{item}</li>
+              ))}
+            </ol>
+          );
+        }
+
+        // Regular paragraph with line breaks
+        const lines = paragraph.split('\n');
+        return (
+          <p key={i}>
+            {lines.map((line, j) => (
+              <React.Fragment key={j}>
+                {line}
+                {j < lines.length - 1 && <br />}
+              </React.Fragment>
+            ))}
+          </p>
+        );
+      })}
+    </>
+  );
+};
+
 // ActiveBookBanner组件 - 显示当前正在讨论的书籍信息
 const ActiveBookBanner = ({ book, onExitBookMode }) => {
+  const { t } = useTranslation();
   if (!book) return null;
 
   return (
@@ -17,7 +83,7 @@ const ActiveBookBanner = ({ book, onExitBookMode }) => {
         </div>
       </div>
       <button className="exit-book-mode" onClick={onExitBookMode}>
-        结束讨论
+        {t('book.endDiscussion')}
       </button>
     </div>
   );
@@ -48,12 +114,12 @@ const ChatInterface = () => {
     setMessages([
       {
         id: 'welcome',
-        text: 'Welcome to Pickatale Reading Assistant! I can analyze your reading voice and provide personalized feedback to help improve your reading skills. Try reading a passage or asking a question.',
+        text: t('messages.welcome'),
         sender: 'assistant',
         timestamp: new Date().toISOString()
       }
     ]);
-  }, []);
+  }, [t]);
 
   // 当消息列表更新时，滚动到底部
   useEffect(() => {
@@ -145,7 +211,7 @@ const ChatInterface = () => {
   // 退出书籍讨论模式
   const exitBookMode = () => {
     setActiveBook(null);
-    setStatus('已退出书籍讨论模式');
+    setStatus(t('book.exitedBookMode'));
     setTimeout(() => setStatus(''), 2000);
   };
 
@@ -337,7 +403,7 @@ const ChatInterface = () => {
               alt="Pickatale"
               className="pickatale-logo-image"
             />
-            <span>Reading Assistant</span>
+            <span>{t('app.readingAssistant')}</span>
           </div>
         </h1>
         <div className="language-selector">
@@ -375,7 +441,7 @@ const ChatInterface = () => {
             className={`chat-message ${message.sender === 'user' ? 'user-message' : 'bot-message'} ${message.isError ? 'error-message' : ''} ${message.isTemporary ? 'temporary-message' : ''}`}
           >
             <div className="message-sender">
-              {message.sender === 'user' ? 'You' : 'Pickatale Assistant'}
+              {message.sender === 'user' ? t('chat.you') : t('chat.pickataleAssistant')}
             </div>
 
             {/* 检查是否有图书推荐结果 */}
@@ -388,7 +454,9 @@ const ChatInterface = () => {
 
               // 仅当没有书籍推荐结果时才显示AI回复的文本内容
               if (!hasBookRecommendations) {
-                return <div className="message-content">{message.text}</div>;
+                return <div className="message-content">
+                  {renderMarkdown(message.text)}
+                </div>;
               }
               return null;
             })()}
@@ -402,7 +470,7 @@ const ChatInterface = () => {
                     // 使用新数据结构 func.result 数组
                     return (
                       <div key={index} className="book-recommendations">
-                        <h3>推荐书籍:</h3>
+                        <h3>{t('book.recommendedBooks')}</h3>
                         <div className="recommended-books-list">
                           {func.result.map((book, bookIndex) => (
                             <div key={bookIndex} className="recommended-book">
@@ -414,7 +482,7 @@ const ChatInterface = () => {
                               >
                                 📚 {book.book_title} (ID: {book.book_id})
                               </a>
-                              <div className="book-reason">推荐理由: {book.reason}</div>
+                              <div className="book-reason">{t('book.recommendationReason')} {book.reason}</div>
                             </div>
                           ))}
                         </div>
@@ -438,7 +506,7 @@ const ChatInterface = () => {
                               >
                                 📚 {book.book_title} (ID: {book.book_id})
                               </a>
-                              <div className="book-reason">推荐理由: {book.reason}</div>
+                              <div className="book-reason">{t('book.recommendationReason')} {book.reason}</div>
                             </div>
                           ))}
                         </div>
@@ -449,7 +517,7 @@ const ChatInterface = () => {
                   else if (func.name === 'search_book_by_title' && func.result) {
                     return (
                       <div key={index} className="book-search-results">
-                        <h3>搜索到的书籍:</h3>
+                        <h3>{t('book.searchResults')}</h3>
                         <div className="matched-books-list">
                           {func.result.map((book, bookIndex) => (
                             <div key={bookIndex} className="matched-book">
@@ -469,11 +537,11 @@ const ChatInterface = () => {
                   else if (func.name === 'get_book_content' && func.result) {
                     return (
                       <div key={index} className="book-content-result">
-                        <h3>书籍内容:</h3>
+                        <h3>{t('book.bookContent')}</h3>
                         <div className="book-status">
                           {func.result.status === 'success'
-                            ? `成功获取《${func.result.book_title}》(ID: ${func.result.book_id})的内容`
-                            : `未找到ID为 ${func.arguments.book_id} 的书籍`}
+                            ? t('book.fetchSuccess', { title: func.result.book_title, bookId: func.result.book_id })
+                            : t('book.fetchFailed', { bookId: func.arguments.book_id })}
                         </div>
                       </div>
                     );
@@ -516,7 +584,7 @@ const ChatInterface = () => {
           type="text"
           value={inputText}
           onChange={(e) => setInputText(e.target.value)}
-          placeholder="Ask a question or read a passage..."
+          placeholder={t('chat.askQuestion')}
           className="text-input"
           disabled={isProcessing}
           onFocus={() => setInputHasFocus(true)}
@@ -539,7 +607,7 @@ const ChatInterface = () => {
       </form>
 
       <div className="keyboard-hint">
-        Press Space to record | Press Esc to stop audio
+        {t('messages.keyboardHint')}
       </div>
 
       <div className="pickatale-footer">
@@ -548,7 +616,7 @@ const ChatInterface = () => {
           <span className="bubble bubble-yellow"></span>
           <span className="bubble bubble-blue"></span>
         </div>
-        <p>© {new Date().getFullYear()} Pickatale. Helping children love reading.</p>
+        <p>{t('footer.copyright', { year: new Date().getFullYear() })}</p>
       </div>
     </>
   );

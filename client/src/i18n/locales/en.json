@@ -1,18 +1,31 @@
 {
   "app": {
     "title": "Pickatale Learning Assistant",
-    "language": "Language"
+    "language": "Language",
+    "readingAssistant": "Reading Assistant"
   },
   "chat": {
     "placeholder": "Type your message here...",
+    "askQuestion": "Ask a question or read a passage...",
     "send": "Send",
     "record": "Hold to Record",
     "recording": "Recording...",
     "ai": "AI Assistant",
     "you": "You",
+    "pickataleAssistant": "Pickatale Assistant",
     "thinking": "Thinking...",
     "speechToText": "Converting speech to text...",
     "textToSpeech": "Generating voice response..."
+  },
+  "book": {
+    "endDiscussion": "End Discussion",
+    "exitedBookMode": "Exited book discussion mode",
+    "recommendedBooks": "Recommended Books:",
+    "searchResults": "Book Search Results:",
+    "bookContent": "Book Content:",
+    "recommendationReason": "Recommendation Reason:",
+    "fetchSuccess": "Successfully fetched content for '{title}' (ID: {bookId})",
+    "fetchFailed": "Could not find book with ID: {bookId}"
   },
   "errors": {
     "recordingFailed": "Recording failed. Please check your microphone.",
@@ -21,8 +34,12 @@
     "audioPlaybackError": "Audio playback failed. Please try again."
   },
   "messages": {
-    "welcome": "Hello! I'm your voice assistant. How can I help you today?",
+    "welcome": "Welcome to Pickatale Reading Assistant! I can analyze your reading voice and provide personalized feedback to help improve your reading skills. Try reading a passage or asking a question.",
     "pressSpace": "You can press the SPACE key to start recording",
-    "pressEsc": "ESC key to stop audio playback"
+    "pressEsc": "ESC key to stop audio playback",
+    "keyboardHint": "Press Space to record | Press Esc to stop audio"
+  },
+  "footer": {
+    "copyright": "© {year} Pickatale. Helping children love reading."
   }
 }
