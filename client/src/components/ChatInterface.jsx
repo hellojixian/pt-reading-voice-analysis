@@ -154,7 +154,7 @@ const ChatInterface = () => {
     const handleAudioError = (e) => {
       console.error('音频播放错误:', e);
       setStatus(t('errors.audioPlaybackError'));
-      setTimeout(() => setStatus(''), 3000);
+      // 不再自动隐藏错误消息
       setPlayingAudioId(null); // 重置播放状态
     };
 
@@ -218,7 +218,7 @@ const ChatInterface = () => {
         }).catch(e => {
           console.error('音频播放失败:', e);
           setStatus(t('errors.audioPlaybackError'));
-          setTimeout(() => setStatus(''), 3000);
+          // 不再自动隐藏错误消息
         });
       }
     } catch (audioError) {
@@ -230,7 +230,7 @@ const ChatInterface = () => {
   const exitBookMode = () => {
     setActiveBook(null);
     setStatus(t('book.exitedBookMode'));
-    setTimeout(() => setStatus(''), 3000); // 更新为3秒，与其他状态消息保持一致
+    // 不再自动隐藏状态消息
   };
 
   // 处理文本提交
@@ -295,7 +295,7 @@ const ChatInterface = () => {
         isError: true
       }]);
     } finally {
-      // No need to manually reset status here anymore since it's auto-hidden
+      // Do not reset status message - keep it visible
       setIsProcessing(false);
     }
   };
@@ -305,10 +305,8 @@ const ChatInterface = () => {
     // 设置状态消息
     setStatus(statusMsg);
 
-    // 设置自动隐藏定时器 (3秒后)
-    if (statusMsg) {
-      setTimeout(() => setStatus(''), 3000);
-    }
+    // 在处理过程中保持状态消息可见，不要隐藏
+    // 在processUserInput中收到响应后会清除
 
     // 如果是新步骤，添加到处理步骤列表
     if (progress !== null) {
@@ -382,12 +380,17 @@ const ChatInterface = () => {
         }
       }
 
+      // 获取到服务器的响应后，清除状态消息
+      setStatus('');
+
       // 自动播放音频回复
       if (response.audio_url) {
         playAudio(messageId, response.audio_url);
       }
     } catch (error) {
       console.error('发送消息错误:', error);
+      // 发生错误时也清除状态消息，避免状态消息一直显示
+      setStatus('');
       setMessages(prev => [...prev, {
         id: Date.now().toString(),
         text: t('errors.apiError'),
@@ -397,7 +400,7 @@ const ChatInterface = () => {
       }]);
     } finally {
       setProcessingSteps([]); // 清空处理步骤
-      // No need to manually reset status here anymore since it's auto-hidden
+      // Do not reset status message - keep it visible
       setIsProcessing(false);
     }
   };

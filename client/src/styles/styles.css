@@ -688,7 +688,7 @@ body::after {
   height: 0;
   border-style: solid;
   border-width: 10px 10px 10px 0;
-  border-color: transparent var(--chat-bot-bg) transparent transparent;
+  border-color: transparent var(--accent-color-blue) transparent transparent;
 }
 
 /* Add blue border extension to fill the gap */
