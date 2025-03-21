@@ -88,7 +88,15 @@ const ActiveBookBanner = ({ book, onExitBookMode }) => {
       <div className="book-info">
         <span className="book-icon">📚</span>
         <div className="book-details">
-          <h3>{book.book_title}</h3>
+          <h3>
+            <a
+              href={`https://app.pickatale.com/library/book/${book.book_id}`}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              {book.book_title}
+            </a>
+          </h3>
           <span className="book-id">ID: {book.book_id}</span>
         </div>
       </div>
