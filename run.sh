@@ -106,7 +106,6 @@ start_server() {
     SERVER_PID=$!
 
     echo -e "${GREEN}Server started with PID: ${SERVER_PID}${NC}"
-    return $SERVER_PID
 }
 
 # Start the client component
@@ -132,23 +131,45 @@ start_client() {
 
     cd ..
     echo -e "${GREEN}Client started with PID: ${CLIENT_PID}${NC}"
-    return $CLIENT_PID
 }
 
 # Handle graceful shutdown
 cleanup() {
-    echo -e "\n${YELLOW}Shutting down...${NC}"
+    echo -e "\n${YELLOW}Shutting down services...${NC}"
 
-    # Kill server process if it exists
-    if [ ! -z "$SERVER_PID" ]; then
-        kill $SERVER_PID 2>/dev/null
-        echo -e "${GREEN}Server stopped.${NC}"
+    # Terminate client process if it exists
+    if [ ! -z "$CLIENT_PID" ]; then
+        echo -e "${YELLOW}Stopping client process (PID: ${CLIENT_PID})...${NC}"
+        kill -TERM $CLIENT_PID 2>/dev/null
+
+        # Wait for client to terminate gracefully
+        wait $CLIENT_PID 2>/dev/null
+        echo -e "${GREEN}Client stopped.${NC}"
     fi
 
-    # Kill client process if it exists
-    if [ ! -z "$CLIENT_PID" ]; then
-        kill $CLIENT_PID 2>/dev/null
-        echo -e "${GREEN}Client stopped.${NC}"
+    # Terminate server process if it exists
+    if [ ! -z "$SERVER_PID" ]; then
+        echo -e "${YELLOW}Stopping server process (PID: ${SERVER_PID})...${NC}"
+        kill -TERM $SERVER_PID 2>/dev/null
+
+        # Wait for server to terminate gracefully with timeout
+        echo -e "${YELLOW}Waiting for server to clean up resources...${NC}"
+
+        # Wait for up to 10 seconds for the process to terminate
+        for i in {1..10}; do
+            if ! kill -0 $SERVER_PID 2>/dev/null; then
+                break
+            fi
+            sleep 1
+        done
+
+        # Force kill if process is still running after timeout
+        if kill -0 $SERVER_PID 2>/dev/null; then
+            echo -e "${YELLOW}Server is taking too long, forcing termination...${NC}"
+            kill -9 $SERVER_PID 2>/dev/null
+        else
+            echo -e "${GREEN}Server stopped gracefully.${NC}"
+        fi
     fi
 
     echo -e "${GREEN}Cleanup complete.${NC}"
@@ -176,10 +197,7 @@ main() {
 
     # Start components
     start_server
-    SERVER_PID=$?
-
     start_client
-    CLIENT_PID=$?
 
     echo -e "\n${GREEN}All components started!${NC}"
     echo -e "${BLUE}=================================${NC}"
