@@ -14,6 +14,7 @@ from flask import current_app
 from services.openai_service import OpenAIService
 from services.speech_service import SpeechService
 from utils.file_utils import create_temp_file, save_temp_file_reference
+from utils.markdown_utils import render_markdown_to_html
 import config
 
 class AssistantService:
@@ -264,6 +265,7 @@ class AssistantService:
         # 构建警告响应
         return {
             "text": warning_message,
+            "html": render_markdown_to_html(warning_message),
             "is_warning": True,
             "audio_url": f"/api/audio/{filename}"
         }
@@ -547,6 +549,7 @@ class AssistantService:
         # 构建响应
         return {
             "text": ai_response,
+            "html": render_markdown_to_html(ai_response),
             "audio_url": f"/api/audio/{filename}",
             "function_results": function_results
         }
