@@ -7,6 +7,7 @@ from flask import jsonify, request, current_app
 
 # 导入服务
 from services.openai_service import OpenAIService
+from utils.markdown_utils import render_markdown_to_html
 
 # 初始化服务
 openai_service = OpenAIService()
@@ -52,6 +53,7 @@ def chat():
             # 标记为特殊消息类型
             response = {
                 "text": ai_response,
+                "html": render_markdown_to_html(ai_response),
                 "is_warning": True,
                 "audio_url": f"/api/audio/{os.path.basename(audio_path)}"
             }
@@ -61,6 +63,9 @@ def chat():
         else:
             # 正常获取AI回复
             ai_response = openai_service.get_chat_response(conversation_history)
+
+            # 处理Markdown格式转换为HTML
+            html_response = render_markdown_to_html(ai_response)
 
             # 更新对话历史
             conversation_history.append({"role": "assistant", "content": ai_response})
@@ -76,6 +81,7 @@ def chat():
             # 构建响应
             response = {
                 "text": ai_response,
+                "html": html_response,
                 "audio_url": f"/api/audio/{os.path.basename(audio_path)}"
             }
 

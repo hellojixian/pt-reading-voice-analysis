@@ -33,8 +33,15 @@ def setup_cors(app: Flask, origins: Union[str, List[str], None] = "*") -> None:
         返回:
             Response: 添加了CORS头的响应对象
         """
-        # 添加CORS头
-        response.headers.add('Access-Control-Allow-Origin', '*' if origins == "*" else ', '.join(origins) if isinstance(origins, list) else origins)
+        # 添加CORS头 - 只提供一个值，避免多个值导致的CORS错误
+        if origins == "*":
+            response.headers.add('Access-Control-Allow-Origin', '*')
+        elif isinstance(origins, list):
+            # 实际应用中应该检查请求源是否在允许列表中并返回匹配的源
+            # 这里简化为返回第一个配置的源
+            response.headers.add('Access-Control-Allow-Origin', origins[0] if origins else '*')
+        else:
+            response.headers.add('Access-Control-Allow-Origin', origins or '*')
         response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization')
         response.headers.add('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS')
         return response

@@ -1,6 +1,5 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import renderMarkdown from '../../utils/markdown';
 import BookRecommendations from '../book/BookRecommendations';
 import BookSearchResults from '../book/BookSearchResults';
 
@@ -119,7 +118,13 @@ const MessageItem = ({
       {/* Only show AI text reply if there are no book recommendations */}
       {!hasBookRecommendations && (
         <div className="message-content">
-          {renderMarkdown(message.text)}
+          {/* Debug logging */}
+          {console.log('Message data:', message)}
+          {message.html ? (
+            <div dangerouslySetInnerHTML={{ __html: message.html }} />
+          ) : (
+            <p>{message.text}</p>
+          )}
         </div>
       )}
 

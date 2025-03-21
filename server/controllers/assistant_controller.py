@@ -14,6 +14,7 @@ from flask import jsonify, request, current_app, Response, stream_with_context
 import openai
 from libs import openai_assistant
 from services.openai_service import OpenAIService
+from utils.markdown_utils import render_markdown_to_html
 
 # 初始化服务
 openai_service = OpenAIService()
@@ -100,6 +101,7 @@ def assistant_chat_stream():
                 # 构建警告响应
                 response = {
                     "text": warning_message,
+                    "html": render_markdown_to_html(warning_message),
                     "is_warning": True,
                     "audio_url": f"/api/audio/{os.path.basename(audio_path)}"
                 }
@@ -353,9 +355,13 @@ def assistant_chat_stream():
                 temp_file.write(audio_data)
                 audio_path = temp_file.name
 
+            # 渲染Markdown为HTML
+            html_response = render_markdown_to_html(ai_response)
+
             # 构建响应
             response = {
                 "text": ai_response,
+                "html": html_response,
                 "audio_url": f"/api/audio/{os.path.basename(audio_path)}",
                 "function_results": function_results
             }
@@ -363,8 +369,17 @@ def assistant_chat_stream():
             # 保存文件路径以便后续请求
             current_app.config[f"TEMP_AUDIO_{os.path.basename(audio_path)}"] = audio_path
 
+            # 确保响应中包含html字段用于markdown渲染
+            print(f"发送响应，包含HTML: {len(html_response) if html_response else 0}字节")
+
             # 发送完成事件
-            yield format_sse("complete", response)
+            complete_response = {
+                "text": ai_response,
+                "html": html_response,
+                "audio_url": f"/api/audio/{os.path.basename(audio_path)}",
+                "function_results": function_results
+            }
+            yield format_sse("complete", complete_response)
 
         except Exception as e:
             yield format_sse("error", {"error": str(e)})
@@ -405,6 +420,7 @@ def assistant_chat():
             # 构建警告响应并直接返回
             response = {
                 "text": warning_message,
+                "html": render_markdown_to_html(warning_message),
                 "is_warning": True,
                 "audio_url": f"/api/audio/{os.path.basename(audio_path)}"
             }
@@ -613,6 +629,9 @@ def assistant_chat():
                 # 使用 openai_assistant 模块中的 clean_text 函数清理文本
                 ai_response += openai_assistant.clean_text(content.text.value)
 
+        # 渲染Markdown为HTML
+        html_response = render_markdown_to_html(ai_response)
+
         # 生成语音
         audio_data = openai_service.text_to_speech(ai_response)
 
@@ -624,6 +643,7 @@ def assistant_chat():
         # 构建响应
         response = {
             "text": ai_response,
+            "html": html_response,
             "audio_url": f"/api/audio/{os.path.basename(audio_path)}",
             "function_results": function_results  # 添加函数调用结果
         }

@@ -87,6 +87,7 @@ const useChat = (onAudioPlayRequest, processBookFunctionResults) => {
       setMessages(prev => [...prev, {
         id: messageId,
         text: response.text,
+        html: response.html, // Add HTML content from the server
         sender: 'assistant',
         timestamp: new Date().toISOString(),
         audioUrl: response.audio_url,
