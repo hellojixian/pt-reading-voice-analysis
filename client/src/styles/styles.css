@@ -295,7 +295,7 @@ body::after {
 .bot-message::before {
   left: -10px;
   border-width: 10px 10px 10px 0;
-  border-color: transparent var(--chat-bot-bg) transparent transparent;
+  border-color: transparent var(--accent-color-blue) transparent transparent;
 }
 
 .message-content {
