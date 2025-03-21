@@ -262,12 +262,14 @@ body::after {
   clear: both;
 }
 
-.chat-message::after {
+/* 对话气泡尾巴样式修复 */
+.chat-message::before {
   content: '';
   position: absolute;
-  bottom: 0;
-  width: 12px;
-  height: 12px;
+  bottom: 15px;
+  width: 0;
+  height: 0;
+  border-style: solid;
 }
 
 .user-message {
@@ -277,10 +279,10 @@ body::after {
   border-bottom-right-radius: 4px;
 }
 
-.user-message::after {
-  right: -6px;
-  border-radius: 0 0 0 12px;
-  background-color: var(--primary-color);
+.user-message::before {
+  right: -10px;
+  border-width: 10px 0 10px 10px;
+  border-color: transparent transparent transparent var(--primary-color);
 }
 
 .bot-message {
@@ -290,10 +292,10 @@ body::after {
   border-left: 3px solid var(--accent-color-blue);
 }
 
-.bot-message::after {
-  left: -6px;
-  border-radius: 0 0 12px 0;
-  background-color: var(--chat-bot-bg);
+.bot-message::before {
+  left: -10px;
+  border-width: 10px 10px 10px 0;
+  border-color: transparent var(--chat-bot-bg) transparent transparent;
 }
 
 .message-content {

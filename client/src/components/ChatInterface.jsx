@@ -8,8 +8,17 @@ import { sendTextMessage, sendAudioForTranscription } from '../services/api';
 const renderMarkdown = (text) => {
   if (!text) return null;
 
+  // Process bold text first (before paragraph splitting)
+  const processBoldText = (content) => {
+    // Replace **text** with <strong>text</strong> using regex
+    return content.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+  };
+
+  // Apply bold formatting
+  const textWithBoldFormatting = processBoldText(text);
+
   // Split by line breaks to handle paragraphs
-  const paragraphs = text.split('\n\n');
+  const paragraphs = textWithBoldFormatting.split('\n\n');
 
   return (
     <>
@@ -19,11 +28,11 @@ const renderMarkdown = (text) => {
 
         // Handle headers
         if (paragraph.startsWith('# ')) {
-          return <h1 key={i}>{paragraph.substring(2)}</h1>;
+          return <h1 key={i} dangerouslySetInnerHTML={{ __html: paragraph.substring(2) }} />;
         } else if (paragraph.startsWith('## ')) {
-          return <h2 key={i}>{paragraph.substring(3)}</h2>;
+          return <h2 key={i} dangerouslySetInnerHTML={{ __html: paragraph.substring(3) }} />;
         } else if (paragraph.startsWith('### ')) {
-          return <h3 key={i}>{paragraph.substring(4)}</h3>;
+          return <h3 key={i} dangerouslySetInnerHTML={{ __html: paragraph.substring(4) }} />;
         }
 
         // Handle lists (simple implementation)
@@ -31,9 +40,9 @@ const renderMarkdown = (text) => {
           const items = paragraph.split('\n- ');
           return (
             <ul key={i}>
-              {items[0] && <p>{items[0]}</p>}
+              {items[0] && <p dangerouslySetInnerHTML={{ __html: items[0] }} />}
               {items.slice(1).map((item, j) => (
-                <li key={j}>{item}</li>
+                <li key={j} dangerouslySetInnerHTML={{ __html: item }} />
               ))}
             </ul>
           );
@@ -44,9 +53,9 @@ const renderMarkdown = (text) => {
           const items = paragraph.split(/\n\d+\.\s/);
           return (
             <ol key={i}>
-              {items[0] && <p>{items[0]}</p>}
+              {items[0] && <p dangerouslySetInnerHTML={{ __html: items[0] }} />}
               {items.slice(1).map((item, j) => (
-                <li key={j}>{item}</li>
+                <li key={j} dangerouslySetInnerHTML={{ __html: item }} />
               ))}
             </ol>
           );
@@ -58,7 +67,7 @@ const renderMarkdown = (text) => {
           <p key={i}>
             {lines.map((line, j) => (
               <React.Fragment key={j}>
-                {line}
+                <span dangerouslySetInnerHTML={{ __html: line }} />
                 {j < lines.length - 1 && <br />}
               </React.Fragment>
             ))}
@@ -530,8 +539,14 @@ const ChatInterface = () => {
                         <h3>{t('book.bookContent')}</h3>
                         <div className="book-status">
                           {func.result.status === 'success'
-                            ? t('book.fetchSuccess', { title: func.result.book_title, bookId: func.result.book_id })
-                            : t('book.fetchFailed', { bookId: func.arguments.book_id })}
+                            ? t('book.fetchSuccess', {
+                                title: func.result.book_title,
+                                bookId: func.result.book_id
+                              }).replace('{title}', func.result.book_title).replace('{bookId}', func.result.book_id)
+                            : t('book.fetchFailed', {
+                                bookId: func.arguments.book_id
+                              }).replace('{bookId}', func.arguments.book_id)
+                          }
                         </div>
                       </div>
                     );
