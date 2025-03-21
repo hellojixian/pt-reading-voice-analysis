@@ -2,6 +2,28 @@
 
 A voice analysis and conversation platform supporting voice input, text interaction, and intelligent responses.
 
+## 目录
+- [项目概述](#project-overview)
+  - [系统架构](#system-architecture)
+  - [组件图](#component-diagram)
+  - [用例图](#use-case-diagram)
+  - [主要功能](#key-features)
+- [项目结构](#project-structure)
+- [前提条件](#prerequisites)
+- [设置说明](#setup-instructions)
+- [运行应用程序](#running-the-application)
+- [功能特性](#features)
+- [API端点](#api-endpoints)
+- [业务逻辑流程](#business-logic-flows)
+- [助手服务功能](#assistant-service-functionality)
+- [实用脚本和测试](#utility-scripts-and-testing)
+- [故障排除](#troubleshooting)
+- [停止应用程序](#stopping-the-application)
+- [应用截图](#application-screenshots)
+- [详细API文档](#detailed-api-documentation)
+  - [服务器API文档](#server-api-documentation)
+  - [客户端API文档](#client-api-documentation)
+
 ## Project Overview
 
 Pickatale AI Reading Assistant is an application that combines speech recognition, natural language processing, and text-to-speech conversion technologies to analyze voice input and provide intelligent conversation capabilities. The project consists of a React frontend and a Flask backend, leveraging OpenAI's API including the Assistant API for advanced conversation features and book-related functionalities.
@@ -258,28 +280,6 @@ python server/fetch_book.py <book_id>
 
 **Example usage:**
 
-```bash
-./fetch_book.py 12550-1
-```
-
-This will fetch and display information for the book with ID "12550-1". The script currently supports test book IDs: 12550-1, 2590-3, and 2940-5.
-
-### Testing the Data Source Module
-
-The project includes comprehensive tests for the `fetch_book_content()` function:
-
-```bash
-# From the project root directory:
-cd server
-python -m pytest tests/ -v
-```
-
-**Test Features:**
-
-- Unit tests for book content retrieval functionality
-- Tests all supported book IDs: 12550-1, 2590-3, and 2940-5
-- Validates data structure and content of responses
-- Tests error handling for invalid book IDs and database issues
 - Uses mocks to avoid actual database connections during testing
 
 Test files are located in the `server/tests/` directory:
