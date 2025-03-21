@@ -92,6 +92,15 @@ body::after {
   font-weight: 700;
 }
 
+.active-book-banner h3 a {
+  color: white;
+  text-decoration: none;
+}
+
+.active-book-banner h3 a:hover {
+  text-decoration: underline;
+}
+
 .active-book-banner .book-id {
   font-size: 0.8rem;
   opacity: 0.8;
