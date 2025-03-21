@@ -63,6 +63,13 @@ def assistant_chat_stream():
     if not message:
         return jsonify({"error": "Message content missing"}), 400
 
+    # 获取用户语言（如果传入）
+    lang = request.args.get('language', 'en')
+
+    # 内容审核
+    is_flagged, categories = openai_service.moderate_content(message)
+    print(f"是否被标记: {is_flagged}, 类别: {categories}")
+
     # 初始化或获取用户的线程ID
     try:
         thread_id = init_assistant_thread()
@@ -73,17 +80,36 @@ def assistant_chat_stream():
         # 发送初始状态
         yield format_sse("status", {"status": "Analyzing your request..."})
 
-        client = openai.OpenAI()
+        try:
+            # 检查内容是否被标记为不适当
+            if is_flagged:
+                yield format_sse("status", {"status": "Content moderation check..."})
 
-        # 获取当前 Assistant ID
-        assistant_id = os.getenv('OPENAI_ASSISTANT_ID', None)
-        if not assistant_id:
-            assistant_id = current_app.config.get('OPENAI_ASSISTANT_ID')
-            if not assistant_id:
-                yield format_sse("error", {"error": "Assistant ID not configured"})
+                # 动态生成友好的警告信息
+                context = []  # 流式模式下不需要对话上下文
+                warning_message = openai_service.generate_friendly_warning(categories, lang, context)
+
+                # 构建警告响应
+                response = {
+                    "text": warning_message,
+                    "is_warning": True
+                }
+
+                # 直接返回警告，不继续处理请求
+                yield format_sse("complete", response)
                 return
 
-        try:
+            # 内容审核通过，继续正常处理
+            client = openai.OpenAI()
+
+            # 获取当前 Assistant ID
+            assistant_id = os.getenv('OPENAI_ASSISTANT_ID', None)
+            if not assistant_id:
+                assistant_id = current_app.config.get('OPENAI_ASSISTANT_ID')
+                if not assistant_id:
+                    yield format_sse("error", {"error": "Assistant ID not configured"})
+                    return
+
             # 向线程添加用户消息
             client.beta.threads.messages.create(
                 thread_id=thread_id,
@@ -343,6 +369,26 @@ def assistant_chat():
 
         user_message = data['message']
 
+        # 获取用户语言（如果传入）
+        lang = data.get('language', 'en')
+
+        # 内容审核
+        is_flagged, categories = openai_service.moderate_content(user_message)
+        print(f"是否被标记: {is_flagged}, 类别: {categories}")
+
+        # 检查内容是否被标记为不适当
+        if is_flagged:
+            # 动态生成友好的警告信息
+            context = []  # 非流式模式下暂不使用对话上下文
+            warning_message = openai_service.generate_friendly_warning(categories, lang, context)
+
+            # 构建警告响应并直接返回
+            return jsonify({
+                "text": warning_message,
+                "is_warning": True
+            })
+
+        # 内容审核通过，继续正常处理
         # 初始化或获取用户的线程ID
         thread_id = init_assistant_thread()
 

@@ -90,6 +90,7 @@ const useChat = (onAudioPlayRequest, processBookFunctionResults) => {
         sender: 'assistant',
         timestamp: new Date().toISOString(),
         audioUrl: response.audio_url,
+        isWarning: response.is_warning || false, // Add warning flag
         functionResults: response.function_results || [] // Add function call results
       }]);
 
@@ -101,8 +102,8 @@ const useChat = (onAudioPlayRequest, processBookFunctionResults) => {
       // Clear status message after getting server response
       setStatus('');
 
-      // Auto-play audio reply
-      if (response.audio_url) {
+      // Auto-play audio reply - only for non-warning messages
+      if (response.audio_url && !response.is_warning) {
         onAudioPlayRequest(messageId, response.audio_url);
       }
     } catch (error) {

@@ -92,7 +92,7 @@ const MessageItem = ({
 
   return (
     <div
-      className={`chat-message ${message.sender === 'user' ? 'user-message' : 'bot-message'} ${message.isError ? 'error-message' : ''} ${message.isTemporary ? 'temporary-message' : ''}`}
+      className={`chat-message ${message.sender === 'user' ? 'user-message' : 'bot-message'} ${message.isError ? 'error-message' : ''} ${message.isTemporary ? 'temporary-message' : ''} ${message.isWarning ? 'warning-message' : ''}`}
     >
       <div className="message-sender">
         {message.sender === 'user' ? t('chat.you') : t('chat.pickataleAssistant')}

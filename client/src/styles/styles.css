@@ -307,6 +307,21 @@ body::after {
   border-color: transparent var(--accent-color-blue) transparent transparent;
 }
 
+/* 内容审核警告消息样式 */
+.warning-message {
+  background-color: rgba(255, 235, 235, 0.9);
+  float: left;
+  border-bottom-left-radius: 4px;
+  border-left: 3px solid var(--error-color);
+  color: #c0392b;
+}
+
+.warning-message::before {
+  left: -10px;
+  border-width: 10px 10px 10px 0;
+  border-color: transparent var(--error-color) transparent transparent;
+}
+
 .message-content {
   font-size: 1rem;
 }
@@ -542,6 +557,12 @@ body::after {
 .text-input:focus {
   border-color: var(--primary-color);
   box-shadow: 0 0 0 2px rgba(42, 86, 66, 0.1);
+}
+
+.text-input:disabled {
+  background-color: #f6f6f6;
+  color: var(--light-text);
+  cursor: not-allowed;
 }
 
 .record-button {

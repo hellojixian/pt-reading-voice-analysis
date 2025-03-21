@@ -33,6 +33,9 @@
     "emptyMessage": "请输入消息或录制语音。",
     "audioPlaybackError": "音频播放失败，请重试。"
   },
+  "moderation": {
+    "warning": "不要淘气，这不是你这个年龄该知道的内容哦！让我们聊一些有趣又健康的话题吧。"
+  },
   "messages": {
     "welcome": "欢迎使用Pickatale阅读助手！我能分析您的阅读语音并提供个性化反馈，帮助提高您的阅读技能。尝试阅读一段文字或提出问题。",
     "pressSpace": "您可以按空格键开始录音",

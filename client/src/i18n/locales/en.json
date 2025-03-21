@@ -33,6 +33,9 @@
     "emptyMessage": "Please enter a message or record your voice.",
     "audioPlaybackError": "Audio playback failed. Please try again."
   },
+  "moderation": {
+    "warning": "Don't be naughty! This isn't something for someone your age. Let's talk about fun and healthy topics instead!"
+  },
   "messages": {
     "welcome": "Welcome to Pickatale Reading Assistant! I can analyze your reading voice and provide personalized feedback to help improve your reading skills. Try reading a passage or asking a question.",
     "pressSpace": "You can press the SPACE key to start recording",
