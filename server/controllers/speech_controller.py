@@ -15,7 +15,7 @@ def speech_to_text():
     """处理语音转文字请求"""
     try:
         if 'audio' not in request.files:
-            return jsonify({"error": "没有上传音频文件"}), 400
+            return jsonify({"error": "No audio file uploaded"}), 400
 
         audio_file = request.files['audio']
 
@@ -24,7 +24,7 @@ def speech_to_text():
         file_ext = filename.rsplit('.', 1)[1].lower() if '.' in filename else ''
 
         if file_ext not in config.ALLOWED_AUDIO_FORMATS:
-            return jsonify({"error": f"不支持的音频格式，请使用以下格式之一: {', '.join(config.ALLOWED_AUDIO_FORMATS)}"}), 400
+            return jsonify({"error": f"Unsupported audio format, please use one of the following formats: {', '.join(config.ALLOWED_AUDIO_FORMATS)}"}), 400
 
         # 使用OpenAI的Whisper API进行转录
         transcription = openai_service.transcribe_audio(audio_file)

@@ -61,7 +61,7 @@ def assistant_chat_stream():
     # 获取消息内容
     message = request.args.get('message')
     if not message:
-        return jsonify({"error": "缺少消息内容"}), 400
+        return jsonify({"error": "Message content missing"}), 400
 
     # 初始化或获取用户的线程ID
     try:
@@ -71,7 +71,7 @@ def assistant_chat_stream():
 
     def generate():
         # 发送初始状态
-        yield format_sse("status", {"status": "正在分析您的请求..."})
+        yield format_sse("status", {"status": "Analyzing your request..."})
 
         client = openai.OpenAI()
 
@@ -80,7 +80,7 @@ def assistant_chat_stream():
         if not assistant_id:
             assistant_id = current_app.config.get('OPENAI_ASSISTANT_ID')
             if not assistant_id:
-                yield format_sse("error", {"error": "未配置 Assistant ID"})
+                yield format_sse("error", {"error": "Assistant ID not configured"})
                 return
 
         try:
@@ -91,7 +91,7 @@ def assistant_chat_stream():
                 content=message
             )
 
-            yield format_sse("status", {"status": "正在思考中..."})
+            yield format_sse("status", {"status": "Thinking..."})
 
             # 运行助手
             run = client.beta.threads.runs.create(
@@ -110,14 +110,14 @@ def assistant_chat_stream():
                 )
 
                 # 发送当前状态更新
-                yield format_sse("status", {"status": f"Assistant状态: {run_status.status}"})
+                yield format_sse("status", {"status": f"Assistant status: {run_status.status}"})
 
                 if run_status.status == 'completed':
-                    yield format_sse("status", {"status": "生成回复中..."})
+                    yield format_sse("status", {"status": "Generating response..."})
                     break
 
                 elif run_status.status == 'requires_action':
-                    yield format_sse("status", {"status": "执行函数调用中..."})
+                    yield format_sse("status", {"status": "Executing function call..."})
 
                     # 处理函数调用请求
                     if run_status.required_action.type == "submit_tool_outputs":
@@ -134,12 +134,12 @@ def assistant_chat_stream():
                                 "arguments": function_args
                             })
 
-                            yield format_sse("status", {"status": f"调用函数: {function_name}"})
+                            yield format_sse("status", {"status": f"Calling function: {function_name}"})
 
                             # 根据函数名称处理不同的函数调用
                             if function_name == "recommend_books":
                                 yield format_sse("progress", {
-                                    "status": "正在分析阅读兴趣并推荐图书...",
+                                    "status": "Analyzing reading interests and recommending books...",
                                     "progress": {
                                         "type": "book_recommendation",
                                         "icon": "📚"
@@ -152,7 +152,7 @@ def assistant_chat_stream():
                                 # 获取书籍推荐助手 ID
                                 book_recommandation_assistant_id = current_app.config.get('BOOK_RECOMMANDATION_ASSISTANT_ID')
                                 if not book_recommandation_assistant_id:
-                                    yield format_sse("status", {"status": "未配置书籍推荐助手 ID，无法提供图书推荐"})
+                                    yield format_sse("status", {"status": "Book recommendation assistant ID not configured, cannot provide book recommendations"})
                                     recommended_books = []
                                 else:
                                     # 调用 search_books_by_interest 获取推荐书籍
@@ -162,7 +162,7 @@ def assistant_chat_stream():
                                         user_interests
                                     )
 
-                                    yield format_sse("status", {"status": "找到匹配的书籍推荐"})
+                                    yield format_sse("status", {"status": "Found matching book recommendations"})
 
                                 # 记录函数调用结果
                                 function_results[-1]["result"] = recommended_books
@@ -178,7 +178,7 @@ def assistant_chat_stream():
 
                             elif function_name == "search_book_by_title":
                                 yield format_sse("progress", {
-                                    "status": "正在搜索书名匹配的图书...",
+                                    "status": "Searching for books matching the title...",
                                     "progress": {
                                         "type": "book_search",
                                         "icon": "🔍"
@@ -191,7 +191,7 @@ def assistant_chat_stream():
                                 # 获取书籍推荐助手 ID来获取关联的vector_store_id
                                 book_recommandation_assistant_id = current_app.config.get('BOOK_RECOMMANDATION_ASSISTANT_ID')
                                 if not book_recommandation_assistant_id:
-                                    yield format_sse("status", {"status": "未配置书籍推荐助手 ID，无法搜索图书"})
+                                    yield format_sse("status", {"status": "Book recommendation assistant ID not configured, cannot search for books"})
                                     matched_books = []
                                 else:
                                     # 获取助手详情以获取vector_store_id
@@ -203,18 +203,18 @@ def assistant_chat_stream():
                                         vector_store_ids = assistant.tool_resources.file_search.vector_store_ids
                                         if vector_store_ids:
                                             vector_store_id = vector_store_ids[0]
-                                            yield format_sse("status", {"status": f"正在使用vector_store搜索书名: {title}"})
+                                            yield format_sse("status", {"status": f"Searching for title using vector_store: {title}"})
                                             matched_books = oa.search_book_by_title(vector_store_id, title)
 
                                             if matched_books:
-                                                yield format_sse("status", {"status": f"找到{len(matched_books)}本匹配的图书"})
+                                                yield format_sse("status", {"status": f"Found {len(matched_books)} matching books"})
                                             else:
-                                                yield format_sse("status", {"status": "未找到匹配的图书"})
+                                                yield format_sse("status", {"status": "No matching books found"})
                                         else:
-                                            yield format_sse("status", {"status": "未找到关联的vector_store"})
+                                            yield format_sse("status", {"status": "No associated vector_store found"})
                                             matched_books = []
                                     else:
-                                        yield format_sse("status", {"status": "助手未配置file_search工具"})
+                                        yield format_sse("status", {"status": "Assistant not configured with file_search tool"})
                                         matched_books = []
 
                                 # 记录函数调用结果
@@ -231,7 +231,7 @@ def assistant_chat_stream():
 
                             elif function_name == "get_book_content":
                                 yield format_sse("progress", {
-                                    "status": "正在获取书籍内容...",
+                                    "status": "Retrieving book content...",
                                     "progress": {
                                         "type": "book_content",
                                         "icon": "📖"
@@ -247,14 +247,14 @@ def assistant_chat_stream():
 
                                 # 记录函数调用结果
                                 if book_data:
-                                    yield format_sse("status", {"status": f"成功获取《{book_data['book_title']}》的内容"})
+                                    yield format_sse("status", {"status": f"Successfully retrieved content for '{book_data['book_title']}'"})
                                     function_results[-1]["result"] = {
                                         "book_id": book_data["book_id"],
                                         "book_title": book_data["book_title"],
                                         "status": "success"
                                     }
                                 else:
-                                    yield format_sse("status", {"status": f"未找到ID为{book_id}的书籍"})
+                                    yield format_sse("status", {"status": f"Book with ID {book_id} not found"})
                                     function_results[-1]["result"] = {
                                         "book_id": book_id,
                                         "status": "not_found"
@@ -277,7 +277,7 @@ def assistant_chat_stream():
                         )
 
                 elif run_status.status in ['failed', 'cancelled', 'expired']:
-                    yield format_sse("error", {"error": f"Assistant 运行失败: {run_status.status}"})
+                    yield format_sse("error", {"error": f"Assistant run failed: {run_status.status}"})
                     return
 
                 # 短暂等待后再检查状态
@@ -294,7 +294,7 @@ def assistant_chat_stream():
                     break
 
             if not assistant_message:
-                yield format_sse("error", {"error": "未收到助手回复"})
+                yield format_sse("error", {"error": "No response received from assistant"})
                 return
 
             # 提取文本内容
@@ -307,7 +307,7 @@ def assistant_chat_stream():
                     ai_response += openai_assistant.clean_text(content.text.value)
 
             # 生成语音
-            yield format_sse("status", {"status": "正在生成语音回复..."})
+            yield format_sse("status", {"status": "Generating voice response..."})
             audio_data = openai_service.text_to_speech(ai_response)
 
             # 创建临时文件保存音频
@@ -339,7 +339,7 @@ def assistant_chat():
     try:
         data = request.json
         if not data or 'message' not in data:
-            return jsonify({"error": "缺少消息内容"}), 400
+            return jsonify({"error": "Message content missing"}), 400
 
         user_message = data['message']
 
@@ -354,7 +354,7 @@ def assistant_chat():
             # 如果环境变量中没有设置，尝试从应用配置中获取
             assistant_id = current_app.config.get('OPENAI_ASSISTANT_ID')
             if not assistant_id:
-                return jsonify({"error": "未配置 Assistant ID"}), 500
+                return jsonify({"error": "Assistant ID not configured"}), 500
 
         # 向线程添加用户消息
         client.beta.threads.messages.create(
@@ -512,7 +512,7 @@ def assistant_chat():
                         tool_outputs=tool_outputs
                     )
             elif run_status.status in ['failed', 'cancelled', 'expired']:
-                return jsonify({"error": f"Assistant 运行失败: {run_status.status}"}), 500
+                return jsonify({"error": f"Assistant run failed: {run_status.status}"}), 500
 
             # 短暂等待后再检查状态
             time.sleep(0.5)
@@ -528,7 +528,7 @@ def assistant_chat():
                 break
 
         if not assistant_message:
-            return jsonify({"error": "未收到助手回复"}), 500
+            return jsonify({"error": "No response received from assistant"}), 500
 
         # 提取文本内容
         ai_response = ""

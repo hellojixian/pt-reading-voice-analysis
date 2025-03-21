@@ -9,7 +9,7 @@ def get_audio(filename):
     try:
         audio_path = current_app.config.get(f"TEMP_AUDIO_{filename}")
         if not audio_path or not os.path.exists(audio_path):
-            return jsonify({"error": "找不到音频文件"}), 404
+            return jsonify({"error": "Audio file not found"}), 404
 
         # 使用Flask的send_file函数，但添加必要的响应头
         response = send_file(audio_path, mimetype='audio/mpeg', as_attachment=False)

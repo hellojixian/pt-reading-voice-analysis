@@ -22,7 +22,7 @@ def text_to_speech():
     try:
         data = request.json
         if not data or 'text' not in data:
-            return jsonify({"error": "缺少文本内容"}), 400
+            return jsonify({"error": "Text content missing"}), 400
 
         text = data['text']
         voice = data.get('voice', OPENAI_VOICE)  # 默认使用alloy声音

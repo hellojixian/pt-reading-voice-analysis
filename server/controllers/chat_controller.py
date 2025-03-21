@@ -19,7 +19,7 @@ def chat():
     try:
         data = request.json
         if not data or 'message' not in data:
-            return jsonify({"error": "缺少消息内容"}), 400
+            return jsonify({"error": "Message content missing"}), 400
 
         user_message = data['message']
 
