@@ -51,6 +51,11 @@ const MessageItem = ({
 
           // Book content results
           else if (func.name === 'get_book_content' && func.result) {
+            // Get book data from either new (nested) or old (flat) structure
+            const bookData = func.result.book || func.result;
+            const bookId = bookData.book_id;
+            const bookTitle = bookData.book_title;
+
             return (
               <div key={index} className="book-content-result">
                 <h3>{t('book.bookContent')}</h3>
@@ -59,18 +64,18 @@ const MessageItem = ({
                     <>
                       <div className="fetched-book">
                         <a
-                          href={`https://app.pickatale.com/library/book/${func.result.book_id}`}
+                          href={`https://app.pickatale.com/library/book/${bookId}`}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="book-title-link"
                         >
-                          📚 {func.result.book_title} (ID: {func.result.book_id})
+                          📚 {bookTitle} (ID: {bookId})
                         </a>
                         <div className="fetched-success-message">
                           {t('book.fetchSuccess', {
-                            title: func.result.book_title,
-                            bookId: func.result.book_id
-                          }).replace('{title}', func.result.book_title).replace('{bookId}', func.result.book_id)}
+                            title: bookTitle,
+                            bookId: bookId
+                          }).replace('{title}', bookTitle).replace('{bookId}', bookId)}
                         </div>
                       </div>
                     </>

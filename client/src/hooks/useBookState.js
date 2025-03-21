@@ -24,11 +24,20 @@ const useBookState = () => {
     for (const func of functionResults) {
       // Handle get_book_content function call
       if (func.name === 'get_book_content' && func.result && func.result.status === 'success') {
-        // Set current active book
-        setActiveBook({
-          book_id: func.result.book_id,
-          book_title: func.result.book_title
-        });
+        // Set current active book - handle both old and new data structures
+        if (func.result.book) {
+          // New structure - data in book object
+          setActiveBook({
+            book_id: func.result.book.book_id,
+            book_title: func.result.book.book_title
+          });
+        } else {
+          // Old structure - direct properties
+          setActiveBook({
+            book_id: func.result.book_id,
+            book_title: func.result.book_title
+          });
+        }
       }
       // If user requests to exit book discussion mode
       else if ((func.name === 'search_book_by_title' || func.name === 'recommend_books')
