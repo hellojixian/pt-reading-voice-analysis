@@ -520,9 +520,14 @@ const ChatInterface = () => {
                         <div className="matched-books-list">
                           {func.result.map((book, bookIndex) => (
                             <div key={bookIndex} className="matched-book">
-                              <div className="book-title">
+                              <a
+                                href={`https://app.pickatale.com/library/book/${book.book_id}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="book-title-link"
+                              >
                                 📚 {book.book_title} (ID: {book.book_id})
-                              </div>
+                              </a>
                               {book.book_Description && (
                                 <div className="book-description">{book.book_Description}</div>
                               )}
@@ -538,15 +543,30 @@ const ChatInterface = () => {
                       <div key={index} className="book-content-result">
                         <h3>{t('book.bookContent')}</h3>
                         <div className="book-status">
-                          {func.result.status === 'success'
-                            ? t('book.fetchSuccess', {
-                                title: func.result.book_title,
-                                bookId: func.result.book_id
-                              }).replace('{title}', func.result.book_title).replace('{bookId}', func.result.book_id)
-                            : t('book.fetchFailed', {
-                                bookId: func.arguments.book_id
-                              }).replace('{bookId}', func.arguments.book_id)
-                          }
+                          {func.result.status === 'success' ? (
+                            <>
+                              <div className="fetched-book">
+                                <a
+                                  href={`https://app.pickatale.com/library/book/${func.result.book_id}`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="book-title-link"
+                                >
+                                  📚 {func.result.book_title} (ID: {func.result.book_id})
+                                </a>
+                                <div className="fetched-success-message">
+                                  {t('book.fetchSuccess', {
+                                    title: func.result.book_title,
+                                    bookId: func.result.book_id
+                                  }).replace('{title}', func.result.book_title).replace('{bookId}', func.result.book_id)}
+                                </div>
+                              </div>
+                            </>
+                          ) : (
+                            t('book.fetchFailed', {
+                              bookId: func.arguments.book_id
+                            }).replace('{bookId}', func.arguments.book_id)
+                          )}
                         </div>
                       </div>
                     );
