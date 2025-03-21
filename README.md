@@ -4,7 +4,19 @@ A voice analysis and conversation platform supporting voice input, text interact
 
 ## Project Overview
 
-PT Reading Voice Analysis is an application that combines speech recognition, natural language processing, and text-to-speech conversion technologies to analyze voice input and provide intelligent conversation capabilities. The project consists of a React frontend and a Flask backend, leveraging OpenAI API for intelligent conversation features.
+PT Reading Voice Analysis is an application that combines speech recognition, natural language processing, and text-to-speech conversion technologies to analyze voice input and provide intelligent conversation capabilities. The project consists of a React frontend and a Flask backend, leveraging OpenAI's API including the Assistant API for advanced conversation features and book-related functionalities.
+
+### Key Features
+
+- **Voice Input Analysis**: Record and analyze spoken content
+- **Book Recommendations**: Get personalized book recommendations based on interests
+- **Book Search**: Find books by title with intelligent matching
+- **Book Content Retrieval**: Access and discuss specific book content
+- **Intelligent Conversations**: Engage with AI about reading materials and more
+- **Voice Responses**: Convert AI responses to natural-sounding speech
+- **Multi-language Support**: Toggle between English and Chinese interfaces
+- **Real-time Updates**: Stream-based responses for responsive user experience
+- **Content Moderation**: Ensures all content is appropriate
 
 ## Project Structure
 
@@ -135,11 +147,61 @@ Once running, you can access:
 
 ## API Endpoints
 
+### Basic Endpoints
 - `/api/health`: Health check endpoint
 - `/api/chat`: Text-based chat interaction
-- `/api/speech`: Speech processing endpoints
-- `/api/audio`: Audio processing endpoints
-- `/api/tts`: Text-to-speech conversion
+- `/api/chat/reset`: Reset chat history
+- `/api/speech-to-text`: Convert speech to text
+- `/api/text-to-speech`: Convert text to speech
+- `/api/audio/{filename}`: Retrieve generated audio files
+
+### Assistant API Endpoints
+- `/api/assistant-chat`: Process chat messages using OpenAI Assistant API
+- `/api/assistant-chat-stream`: Stream responses in real-time using Server-Sent Events (SSE)
+
+## Documentation
+
+Detailed documentation is available in the following files:
+- [Server API Documentation](docs/server-api.md) - Complete reference for all backend API endpoints, request/response formats, and features
+- [Client API Documentation](docs/client-api.md) - Comprehensive guide to frontend APIs, React hooks, and client-side functionality
+- [AI Assistant Documentation](docs/ai-assistant.md) - Detailed explanation of OpenAI Assistant integration, function calls, and business logic flows
+
+## Assistant Service Functionality
+
+### Overview
+The application uses OpenAI's Assistant API to provide advanced conversation capabilities beyond basic chat. The Assistant service manages user sessions, processes messages, handles function calls, and delivers responses in both standard and streaming formats.
+
+### Key Assistant Features
+
+#### Book Recommendations
+The system can analyze user interests and recommend relevant books.
+```
+Example: "Could you recommend some science fiction books?"
+```
+
+#### Book Search
+Users can search for books by title, with the system finding the closest matches.
+```
+Example: "I'm looking for a book called 'Pride and Prejudice'"
+```
+
+#### Book Content Retrieval
+The system can access and discuss content from specific books in its database.
+```
+Example: "Let's talk about The Great Gatsby"
+```
+
+### Stream-Based Responses
+The Assistant supports Server-Sent Events (SSE) for real-time streaming responses, providing:
+- Status updates during processing
+- Progress indicators for function calls
+- Incremental response delivery
+
+### Content Moderation
+All user inputs are automatically checked for appropriateness. Content that might be unsuitable receives a friendly warning response instead of the requested information.
+
+### Session Management
+The Assistant maintains conversation context through persistent user threads, allowing for coherent multi-turn conversations about complex topics.
 
 ## Utility Scripts and Testing
 
