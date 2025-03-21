@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import RecordButton from './RecordButton';
+import LanguageSelector from './LanguageSelector';
 import { sendTextMessage, sendAudioForTranscription } from '../services/api';
 
 // Simple function to render basic Markdown
@@ -406,18 +407,7 @@ const ChatInterface = () => {
             <span>{t('app.readingAssistant')}</span>
           </div>
         </h1>
-        <div className="language-selector">
-          <select onChange={(e) => {
-            // Handle language change
-            const selectedLanguage = e.target.value;
-            if (window.i18n && window.i18n.changeLanguage) {
-              window.i18n.changeLanguage(selectedLanguage);
-            }
-          }}>
-            <option value="en">English</option>
-            <option value="zh">中文</option>
-          </select>
-        </div>
+        <LanguageSelector />
       </div>
 
       {/* 活跃书籍横幅 */}
