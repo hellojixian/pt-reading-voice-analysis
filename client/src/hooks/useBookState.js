@@ -44,7 +44,7 @@ const useBookState = () => {
    */
   const exitBookMode = () => {
     setActiveBook(null);
-    setStatus(t('book.exitedBookMode'));
+    // Status message removed as per user request
   };
 
   return {
